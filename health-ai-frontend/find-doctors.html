@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <meta charset="UTF-8">
+    <title>Find Doctors - MediAsisstAI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <div class="logo">🩺 MediAsisstAI</div>
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="#">Video Consult</a>
+            <a href="#">Lab Tests</a>
+            <a href="#">Surgeries</a>
+        </nav>
+        <button class="login-btn">Login / Signup</button>
+    </header>
+
+    <section class="doctor-hero">
+        <h1>Your home for health</h1>
+        <p>Find and book doctors near you</p>
+
+        <div class="practo-search">
+
+            <div class="location-box">
+    <span class="icon">📍</span>
+    <input type="text" id="locationInput" value="Lucknow">
+
+   <div class="location-dropdown" id="locationDropdown">
+
+  <div class="loc-top blue">Use my location</div>
+  <div class="loc-top blue">Search in entire Lucknow</div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Gomtinagar</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Indira Nagar</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Aliganj</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Rajajipuram</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Vikas Nagar</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Alambagh</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Ashiyana</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Mahanagar</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Jankipuram</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+  <div class="loc-item">
+    <div class="loc-icon">🔍</div>
+    <div class="loc-text">
+      <div class="loc-name">Kalyanpur</div>
+      <div class="loc-city">Lucknow</div>
+    </div>
+  </div>
+
+</div>
+</div>  
+
+            <div class="divider"></div>
+
+            <div class="doctor-box">
+                <span class="icon">🔍</span>
+                <div class="search-container">
+                    <input type="text" id="doctorSearch" placeholder="Search doctors, clinics, hospitals..."
+                        autocomplete="off">
+
+                    <div class="search-dropdown" id="searchDropdown">
+                        <div class="dropdown-item">
+                            <span>Dentist</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>Gynecologist/Obstetrician</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>General Physician</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>Dermatologist</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>Ear-nose-throat (ENT) Specialist</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>Homeopath</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                        <div class="dropdown-item">
+                            <span>Ayurveda</span>
+                            <small>SPECIALITY</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    </section>
+    <section class="map-section">
+    <div id="map"></div>
+</section>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  // ================= DOCTOR DROPDOWN =================
+  const searchInput = document.getElementById("doctorSearch");
+  const searchDropdown = document.getElementById("searchDropdown");
+  const doctorBox = document.querySelector(".doctor-box");
+
+  searchInput.addEventListener("click", function (e) {
+    e.stopPropagation();
+    searchDropdown.classList.toggle("show");
+  });
+
+  doctorBox.addEventListener("click", function (e) {
+    e.stopPropagation();
+  });
+
+  document.querySelectorAll(".dropdown-item").forEach(item => {
+    item.addEventListener("click", function () {
+      searchInput.value = this.querySelector("span").innerText;
+      searchDropdown.classList.remove("show");
+    });
+  });
+
+
+  // ================= LOCATION DROPDOWN =================
+  const locationInput = document.getElementById("locationInput");
+  const locationBox = document.querySelector(".location-box");
+  const locationDropdown = document.getElementById("locationDropdown");
+
+  const lucknowLocations = {
+    "Gomtinagar": [26.8500, 80.9920],
+    "Indira Nagar": [26.8800, 80.9900],
+    "Aliganj": [26.9000, 80.9500],
+    "Rajajipuram": [26.8400, 80.8800],
+    "Vikas Nagar": [26.8900, 80.9600],
+    "Alambagh": [26.8000, 80.9000],
+    "Ashiyana": [26.7800, 80.9400],
+    "Mahanagar": [26.8800, 80.9500],
+    "Jankipuram": [26.9200, 80.9400],
+    "Kalyanpur": [26.9100, 80.9800]
+  };
+
+  // MAP INIT
+  const map = L.map('map').setView([26.8467, 80.9462], 13);
+
+  L.tileLayer(
+    'https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=q1ROmbcrXnbCUYumAVaW',
+    {
+      attribution: '&copy; MapTiler & OpenStreetMap contributors',
+      tileSize: 512,
+      zoomOffset: -1
+    }
+  ).addTo(map);
+
+  const marker = L.marker([26.8467, 80.9462]).addTo(map)
+    .bindPopup("Lucknow")
+    .openPopup();
+
+  // LOCATION toggle
+  locationBox.addEventListener("click", function (e) {
+    e.stopPropagation();
+    locationDropdown.classList.toggle("show");
+  });
+
+  locationDropdown.addEventListener("click", function (e) {
+    e.stopPropagation();
+  });
+
+  document.querySelectorAll(".loc-item").forEach(option => {
+    option.addEventListener("click", function () {
+      const selected = this.querySelector(".loc-name").innerText.trim();
+      locationInput.value = selected;
+      locationDropdown.classList.remove("show");
+
+      if (lucknowLocations[selected]) {
+        map.flyTo(lucknowLocations[selected], 14);
+        marker.setLatLng(lucknowLocations[selected])
+              .setPopupContent(selected)
+              .openPopup();
+      }
+    });
+  });
+
+  // ================= GLOBAL CLICK CLOSE =================
+  document.addEventListener("click", function () {
+    searchDropdown.classList.remove("show");
+    locationDropdown.classList.remove("show");
+  });
+
+});
+</script>

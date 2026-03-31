@@ -1,0 +1,757 @@
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f8fafc;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 60px;
+    background: white;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1d4ed8;
+}
+
+.nav-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #374151;
+    font-weight: 500;
+}
+
+.login-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid #1d4ed8;
+    background: white;
+    color: #1d4ed8;
+    cursor: pointer;
+}
+
+/* Hero */
+.hero {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.hero h1 {
+    font-size: 36px;
+    color: #111827;
+}
+
+.hero p {
+    color: #6b7280;
+    margin-bottom: 30px;
+}
+
+.search-box {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.search-box input {
+    padding: 14px;
+    width: 250px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Features */
+.features {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    padding: 60px;
+}
+
+.feature-card {
+    background: white;
+    padding: 30px;
+    width: 220px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Symptom Section */
+.symptom-section {
+    display: flex;
+    justify-content: center;
+    padding: 60px;
+}
+
+.symptom-card {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    width: 600px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.symptom-card textarea {
+    width: 100%;
+    height: 120px;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    margin-top: 20px;
+}
+
+.analyze-btn {
+    margin-top: 20px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+}
+
+.disclaimer {
+    font-size: 12px;
+    margin-top: 15px;
+    color: #6b7280;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    margin-top: 40px;
+}
+
+.appointment-section {
+  padding: 80px 60px;
+  background: #f8fafc;
+}
+
+.appointment-container {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.appointment-header h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #111827;
+}
+
+.appointment-header p {
+  color: #6b7280;
+  margin-bottom: 40px;
+}
+
+.appointment-cards {
+  display: flex;
+  gap: 25px;
+}
+
+.appointment-card {
+  width: 25%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.appointment-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.appointment-card h3 {
+  margin-top: 15px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.appointment-card p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.appointment-card:hover {
+  transform: translateY(-5px);
+}
+
+.appointment-wrapper {
+  position: relative;
+}
+
+.appointment-cards {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+.appointment-cards::-webkit-scrollbar {
+  display: none; /* Chrome */
+}
+
+.appointment-card {
+  min-width: 260px;
+  flex-shrink: 0;
+}
+
+.appointment-wrapper {
+  position: relative;
+}
+
+.appointment-cards {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.appointment-card {
+  min-width: 260px;
+  flex-shrink: 0;
+}
+
+.slider-btn {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.left {
+  left: -10px;
+}
+
+.right {
+  right: -10px;
+}
+
+#cardSlider {
+  overflow: hidden;
+}
+
+#cardSlider .appointment-cards {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+#cardSlider .appointment-cards::-webkit-scrollbar {
+  display: none;
+}
+
+.feature-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.doctor-hero {
+  background: #2d3fa3;
+  color: white;
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.doctor-hero h1 {
+  font-size: 36px;
+}
+
+.doctor-hero p {
+  margin-bottom: 30px;
+}
+
+.doctor-list {
+  padding: 60px;
+  display: flex;
+  gap: 30px;
+}
+
+.doctor-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  width: 300px;
+}
+
+.doctor-card button {
+  margin-top: 15px;
+  padding: 10px 15px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.search-container {
+  position: relative;
+  width: 500px;
+  margin: auto;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+.search-dropdown {
+  color: #111827;  /* Force dark text */
+}
+
+.dropdown-item span {
+  color: #111827;  /* Speciality name color */
+}
+
+.dropdown-item::before {
+  content: "🔍";
+  margin-right: 8px;
+}
+
+.search-dropdown {
+  color: #111827;  /* Force dark text */
+}
+
+.dropdown-item span {
+  color: #111827;  /* Speciality name color */
+}
+
+/* Make hero text not affect dropdown */
+.doctor-hero {
+  position: relative;
+}
+
+/* Fix search box layout */
+.search-box {
+  display: flex;
+  justify-content: center;   /* keep centered */
+  align-items: center;
+  gap: 0;                    /* REMOVE space */
+}
+
+/* Remove margin from inputs */
+.search-box input:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.search-container input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Ensure input width correct */
+.search-container input {
+  width: 100%;
+}
+
+/* Force dropdown to appear correctly */
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  margin-top: 5px;
+  display: none;
+  z-index: 9999;
+  color: #111827;
+}
+
+/* Fix text visibility */
+.dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f2f2f2;
+  background: white;
+}
+
+.dropdown-item:hover {
+  background: #f8fafc;
+}
+
+.dropdown-item span {
+  font-weight: 500;
+  color: #111827;
+}
+
+.dropdown-item small {
+  font-size: 11px;
+  color: #888;
+}
+
+.practo-search {
+  display: flex;
+  align-items: center;
+  background: white;
+  width: 700px;
+  margin: 30px auto 0 auto;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  overflow: visible;   /* keep this */
+  position: relative; /* important */
+}
+
+
+.location-box {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  width: 200px;
+  background: transparent;
+}
+
+.doctor-box {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  flex: 1;
+  background: transparent;
+}
+
+
+
+
+.location-box {
+  max-width: 200px;
+}
+
+.icon {
+  margin-right: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.practo-search input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  background: transparent;
+}
+
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #e5e7eb;
+}
+
+.doctor-box {
+  position: static;  /* IMPORTANT */
+}
+
+.search-container {
+  position: relative;
+}
+
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;              /* FIXED */
+  width: 100%;          /* FIXED */
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  margin-top: 6px;
+  display: none;
+  z-index: 9999;
+}
+
+.search-dropdown {
+  display: block !important;
+}
+.map-section {
+  background: white;
+  padding: 0;
+}
+
+#map {
+  width: 70%;
+  height: 800px;
+}
+
+.location-box {
+  position: relative;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 200px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: none;
+  z-index: 9999;
+}
+
+.map-section {
+  padding: 40px 60px;
+  background: #f3f4f6;
+}
+
+#map {
+  width: 80%;
+  height: 800px;   /* THIS WAS MISSING */
+  border-radius: 15px;
+}
+
+.location-box {
+  position: relative;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 220px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  display: none;
+  z-index: 9999;
+}
+
+.location-option {
+  padding: 12px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.location-option:hover {
+  background: #f8fafc;
+}
+
+.location-option.special {
+  color: #2563eb;
+  font-weight: 500;
+}
+#map {
+  width: 80%;
+  height: 800px;   /* THIS WAS MISSING */
+  border-radius: 15px;
+}
+
+.map-section {
+  padding: 40px 60px;
+  background: #f3f4f6;
+}
+
+#map {
+  width: 80%;
+  height: 800px;   /* THIS WAS MISSING */
+  border-radius: 15px;
+}
+.location-box {
+  position: relative;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 260px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  display: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Top special options */
+.location-option.special {
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.location-option.special:hover {
+  background: #f8fafc;
+}
+
+/* Normal location rows */
+.location-option {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+  background: white;
+}
+
+.location-option:hover {
+  background: #f8fafc;
+}
+
+/* Icon circle */
+.location-option::before {
+  content: "🔍";
+  width: 28px;
+  height: 28px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-right: 12px;
+}
+
+/* Text container */
+.location-option span {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.location-option small {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.location-box {
+  position: relative;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 260px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  display: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Top blue options */
+.loc-top {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  background: white;
+}
+
+.loc-top.blue {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.loc-top:hover {
+  background: #f8fafc;
+}
+
+/* Location rows */
+.loc-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f1f1;
+  cursor: pointer;
+  background: white;
+}
+
+.loc-item:hover {
+  background: #f8fafc;
+}
+
+.loc-icon {
+  width: 30px;
+  height: 30px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  font-size: 13px;
+}
+
+.loc-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.loc-city {
+  font-size: 12px;
+  color: #6b7280;
+}
+#locationInput {
+  cursor: pointer;
+}
+
+.location-box {
+  position: relative;
+  cursor: pointer;
+}
+
+.location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 260px;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  border-radius: 6px;
+  display: none;
+  z-index: 9999;
+}
+
+
+/* Hide by default */
+.search-dropdown,
+.location-dropdown {
+  display: none;
+}
+
+/* Show when class added */
+.search-dropdown.show,
+.location-dropdown.show {
+  display: block;
+}
