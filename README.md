@@ -4,10 +4,12 @@ A comprehensive healthcare platform that helps users find doctors, schedule appo
 
 ## Features
 
-- **🔍 Doctor Search**: Search and filter doctors by specialty and location
+- **🤖 AI Doctor**: AI-powered medical consultation and health recommendations
+- **🧘 ZenZone**: Wellness and mindfulness features for mental health support
 - **📋 Doctor Directory**: Browse detailed doctor profiles and credentials
 - **📅 Appointment Booking**: Schedule appointments with available doctors
 - **🗺️ Hospital Locator**: Find nearby hospitals and healthcare facilities on an interactive map
+- **🧪 Lab Tests**: Discover and book laboratory tests
 - **📱 Responsive Design**: Fully responsive UI built with React and Tailwind CSS
 - **🌐 Real-time Data**: MongoDB backend for persistent data storage
 
@@ -39,14 +41,17 @@ MediasisstAI/
 │   │   └── db.js                # MongoDB connection
 │   ├── controllers/
 │   │   ├── doctorController.js
-│   │   └── appointmentController.js
+│   │   ├── appointmentController.js
+│   │   ├── hospitalController.js
+│   │   └── aiController.js       # AI consultation controller
 │   ├── models/
 │   │   ├── Doctor.js
 │   │   └── Appointment.js
 │   └── routes/
 │       ├── doctorRoutes.js
 │       ├── appointmentRoutes.js
-│       └── mapRoutes.js
+│       ├── mapRoutes.js
+│       └── aiRoutes.js           # AI endpoints
 │
 ├── client/
 │   ├── src/
@@ -56,11 +61,12 @@ MediasisstAI/
 │   │   ├── components/
 │   │   │   ├── Navbar.jsx
 │   │   │   ├── SearchBar.jsx
-│   │   │   └── DoctorCard.jsx
+│   │   │   ├── DoctorCard.jsx
+│   │   │   └── ResultCard.jsx
 │   │   └── pages/
 │   │       ├── Home.jsx
-│   │       ├── Search.jsx
-│   │       ├── DoctorList.jsx
+│   │       ├── AiDoctor.jsx      # AI consultation page
+│   │       ├── ZenZone.jsx       # Wellness page
 │   │       ├── MapPage.jsx
 │   │       ├── Appointment.jsx
 │   │       └── LabTests.jsx
@@ -162,6 +168,11 @@ npm run preview
 - `GET /api/appointments` - Get all appointments
 - `POST /api/appointments` - Book new appointment
 
+### AI Consultation
+- `POST /api/ai/consult` - Get AI medical advice
+- `POST /api/ai/symptom-check` - Symptom checker
+- `GET /api/ai/recommendations` - Health recommendations
+
 ### Map
 - `GET /api/map/hospitals` - Get hospital locations for map
 
@@ -170,17 +181,25 @@ npm run preview
 | Page | Route | Description |
 |------|-------|-------------|
 | Home | `/` | Landing page with featured doctors |
-| Search | `/search` | Advanced search for doctors and services |
-| Doctor List | `/doctors` | Browse all available doctors |
+| AI Doctor | `/ai-doctor` | AI-powered medical consultation |
+| ZenZone | `/zen-zone` | Wellness and mindfulness features |
 | Map | `/map` | Interactive map showing hospitals |
 | Appointment | `/appointment/:id` | Book appointment with doctor |
 | Lab Tests | `/lab-tests` | View available lab tests |
 
 ## Features in Detail
 
-### 🔍 Search Functionality
-- Search doctors by name, specialty, and location
-- Filter results by ratings and availability
+### 🤖 AI Doctor Consultation
+- Get instant medical advice from AI
+- Symptom checker and diagnosis assistance
+- Personalized health recommendations
+- 24/7 availability
+
+### 🧘 ZenZone Wellness
+- Guided meditation and mindfulness exercises
+- Mental health resources and support
+- Wellness tips and lifestyle recommendations
+- Stress management tools
 
 ### 📍 Map Integration
 - Interactive map with Leaflet
@@ -244,14 +263,18 @@ lsof -ti:5173 | xargs kill -9
 ```
 ## Roadmap
 
+- [x] AI-powered doctor consultation
+- [x] Wellness and mindfulness features (ZenZone)
+- [x] User-friendly appointment booking
+- [x] Interactive hospital map
 - [ ] User authentication and profiles
 - [ ] Payment integration
 - [ ] Email notifications
 - [ ] Multi-language support
 - [ ] Mobile app
-- [ ] AI-powered doctor recommendations
 - [ ] Telemedicine features
 - [ ] Lab test results integration
+- [ ] Advanced AI diagnostics
 
 ## Acknowledgments
 
