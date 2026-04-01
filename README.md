@@ -207,34 +207,6 @@ npm run build    # Build for production
 npm run preview  # Preview production build
 ```
 
-## Database Schema
-
-### Doctor Model
-```javascript
-{
-  name: String,
-  specialty: String,
-  qualifications: [String],
-  hospital: String,
-  availableSlots: [Date],
-  rating: Number,
-  experience: Number,
-  contact: String
-}
-```
-
-### Appointment Model
-```javascript
-{
-  doctorId: ObjectId,
-  patientName: String,
-  patientEmail: String,
-  appointmentDate: Date,
-  reason: String,
-  status: String
-}
-```
-
 ## Deployment
 
 ### Frontend (Vercel/Netlify)
@@ -270,27 +242,6 @@ lsof -ti:5000 | xargs kill -9
 # Kill process on port 5173
 lsof -ti:5173 | xargs kill -9
 ```
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contact & Support
-
-- **Author**: Ayush Gaur
-- **Email**: ayushgaur475@gmail.com
-- **GitHub**: [@ayushgaur475](https://github.com/ayushgaur475)
-
 ## Roadmap
 
 - [ ] User authentication and profiles
