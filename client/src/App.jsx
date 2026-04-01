@@ -1,10 +1,11 @@
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import Search from "./pages/Search";
-import DoctorList from "./pages/DoctorList";
 import MapPage from "./pages/MapPage";
+import LabTests from "./pages/LabTests";
 import Appointment from "./pages/Appointment";
+import AiDoctor from "./pages/AiDoctor";
+import ZenZone from "./pages/ZenZone";
 
 export default function App() {
   return (
@@ -13,10 +14,11 @@ export default function App() {
       <div className="pt-24 min-h-screen overflow-x-hidden">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/doctors" element={<DoctorList />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/labs" element={<LabTests />} />
           <Route path="/appointment/:id" element={<Appointment />} />
+          <Route path="/ai-doctor" element={<AiDoctor />} />
+          <Route path="/zen-zone" element={<ZenZone />} />
         </Routes>
       </div>
     </div>

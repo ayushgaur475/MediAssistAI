@@ -3,6 +3,7 @@ import cors from "cors";
 import mapRoutes from "./routes/mapRoutes.js";
 import connectDB from "./config/db.js";
 import hospitalRoutes from "./routes/hospitalRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();   // ✅ VERY IMPORTANT
 
@@ -14,6 +15,7 @@ app.use(express.json());
 // Routes
 app.use("/api/map", mapRoutes);
 app.use("/api/hospitals", hospitalRoutes);
+app.use("/api/ai-doctor", aiRoutes);
 
 app.get("/", (req, res) => {
   res.send("Backend running 🚀");

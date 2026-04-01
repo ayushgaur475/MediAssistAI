@@ -1,8 +1,24 @@
 import React from 'react';
 
-export default function ResultCard({ place, index, isHovered, onHoverStart, onHoverEnd, onClick }) {
-  // Generate synthetic distance for realism
-  const syntheticDistance = ((index * 0.7) + 1.2).toFixed(1);
+export default function ResultCard({ place, index, userPos, isHovered, onHoverStart, onHoverEnd, onClick }) {
+  // Calculate real distance using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // Radius of Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return (R * c).toFixed(1);
+  };
+
+  const distance = userPos 
+    ? calculateDistance(userPos[0], userPos[1], place.lat, place.lon)
+    : null;
+    
   const rating = (4 + Math.random()).toFixed(1);
 
   return (
@@ -42,7 +58,7 @@ export default function ResultCard({ place, index, isHovered, onHoverStart, onHo
       <div className="flex flex-col sm:flex-row items-center justify-between mt-5 gap-3 border-t border-[var(--border-subtle)] pt-4">
         <span className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
           <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-          {syntheticDistance} km away
+          {distance ? `${distance} km away` : "Calculating..."}
         </span>
         <div className="flex gap-2 w-full sm:w-auto">
           <button 

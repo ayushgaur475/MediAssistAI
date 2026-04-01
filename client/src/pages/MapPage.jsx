@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useLocation } from "react-router-dom";
-import { Activity } from "lucide-react";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { Activity, AlertCircle, Navigation } from "lucide-react";
 import ResultCard from "../components/ResultCard";
 
 // Handle Map Animations & Bounds
@@ -78,10 +78,13 @@ const COMMON_SPECIALITIES = [
 ];
 
 export default function MapPage() {
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get("mode");
   const [city, setCity] = useState("");
   const [speciality, setSpeciality] = useState("");
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isEmergencyLoading, setIsEmergencyLoading] = useState(false);
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [fallbackMessage, setFallbackMessage] = useState("");
@@ -96,6 +99,166 @@ export default function MapPage() {
 
   const markerRefs = useRef({});
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "API_KEY";
+  
+  useEffect(() => {
+    const cityParam = searchParams.get("city");
+    const specParam = searchParams.get("speciality");
+    const modeParam = searchParams.get("mode");
+
+    if (cityParam) setCity(cityParam);
+    if (specParam) setSpeciality(specParam);
+
+    if (modeParam === "emergency") {
+      handleEmergencySequence();
+    } else if (cityParam) {
+      // Small delay to ensure state is set or just call directly with values
+      handleInitialSearch(cityParam, specParam || "");
+    } else if (modeParam === "doctor") {
+      handleLocate(); // Try to find nearby doctors if mode is doctor but no city
+    }
+  }, [searchParams]);
+
+  const handleInitialSearch = async (c, s) => {
+    if (c === "My Location") {
+      handleLocate();
+      return;
+    }
+    setLoading(true); setFallbackMessage("");
+    try {
+      const res = await fetch(`http://localhost:5000/api/hospitals/search?city=${encodeURIComponent(c)}&speciality=${encodeURIComponent(s)}`);
+      const json = await res.json();
+      if (json.cityCoords) setUserPos([json.cityCoords.lat, json.cityCoords.lon]);
+      if (json.data && json.data.length > 0) setPlaces(json.data);
+      else setFallbackMessage(`No hospitals found in ${c}.`);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
+  };
+
+  const handleEmergencySequence = async () => {
+    setIsEmergencyLoading(true);
+    setLoading(true);
+    setFallbackMessage("🚨 EMERGENCY SOS ACTIVE");
+    
+    if (!navigator.geolocation) {
+      alert("Geolocation required for SOS");
+      setIsEmergencyLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const p = [pos.coords.latitude, pos.coords.longitude];
+      setUserPos(p);
+      await fetchNearestHospital(p);
+    }, (err) => {
+      alert("Allow location to use Emergency SOS");
+      setIsEmergencyLoading(false);
+      setLoading(false);
+    });
+  };
+
+  const fetchNearestHospital = async (pos) => {
+    try {
+      const [lat, lon] = pos;
+      const query = `[out:json][timeout:25];node["amenity"="hospital"](around:10000,${lat},${lon});out body;`;
+      
+      const mirrors = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.osm.ch/api/interpreter"
+      ];
+
+      let json = null;
+      let lastError = null;
+
+      // --- Stage 1: Overpass Mirrors ---
+      for (const mirror of mirrors) {
+        try {
+          const res = await fetch(mirror, {
+            method: "POST",
+            body: query,
+            signal: AbortSignal.timeout(10000) // 10s for emergency
+          });
+          
+          if (res.status === 403 || res.status === 429) continue;
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          
+          const text = await res.text();
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed && parsed.elements && parsed.elements.length > 0) {
+              json = parsed;
+              break;
+            }
+          } catch (e) {
+            throw new Error("Invalid JSON");
+          }
+        } catch (err) {
+          console.warn(`SOS Mirror ${mirror} failed:`, err.message);
+          lastError = err;
+        }
+      }
+
+      // --- Stage 2: Nominatim Fallback ---
+      if (!json || json.elements.length === 0) {
+        console.log("SOS: Overpass failed or empty. Falling back to Nominatim...");
+        try {
+          const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=hospital+near+${lat},${lon}&countrycodes=in&limit=10`;
+          const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'MediAsisstAI-App' } });
+          const nomData = await nomRes.json();
+          
+          if (nomData && nomData.length > 0) {
+            const mapped = nomData.map(item => ({
+              id: `osm_${item.place_id}`,
+              hospital_name: item.display_name.split(',')[0],
+              address: item.display_name,
+              lat: parseFloat(item.lat),
+              lon: parseFloat(item.lon),
+              source: 'osm'
+            }));
+            setPlaces(mapped);
+            const nearest = mapped[0];
+            setSelectedId(nearest.id);
+            setRoutingTo(nearest);
+            fetchRoute(pos, nearest);
+            setFallbackMessage(`✅ SOS: Hospital Found (via Hybrid Search)`);
+            setLoading(false);
+            setIsEmergencyLoading(false);
+            return;
+          }
+        } catch (nomErr) {
+          console.error("SOS Nominatim Fallback failed:", nomErr);
+        }
+      }
+
+      if (json && json.elements && json.elements.length > 0) {
+        const mapped = json.elements.map(el => ({
+          id: `osm_${el.id}`,
+          hospital_name: el.tags.name || "Emergency Medical Center",
+          address: el.tags["addr:full"] || el.tags["addr:street"] || "Nearby Facility",
+          lat: el.lat,
+          lon: el.lon,
+          source: 'osm'
+        }));
+
+        const getDist = (l1, n1, l2, n2) => Math.sqrt((l1-l2)**2 + (n1-n2)**2);
+        mapped.sort((a, b) => getDist(lat, lon, a.lat, a.lon) - getDist(lat, lon, b.lat, b.lon));
+
+        setPlaces(mapped);
+        const nearest = mapped[0];
+        setSelectedId(nearest.id);
+        setRoutingTo(nearest);
+        fetchRoute(pos, nearest);
+        setFallbackMessage(`✅ SOS: Neareast Hospital Found`);
+      } else {
+        setFallbackMessage(lastError ? `⚠️ SOS Error: ${lastError.message}` : "❌ NO HOSPITALS IN 10KM");
+      }
+    } catch (err) {
+      setFallbackMessage("⚠️ SOS SEARCH FAILED. Check Connection.");
+    } finally {
+      setIsEmergencyLoading(false);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetch("http://localhost:5000/api/hospitals/districts").then(res => res.json()).then(json => setAllDistricts(json.data || []));
@@ -146,6 +309,14 @@ export default function MapPage() {
     try {
       const res = await fetch(`http://localhost:5000/api/hospitals/search?city=${encodeURIComponent(city)}&speciality=${encodeURIComponent(speciality)}`);
       const json = await res.json();
+      
+      // Update User Position to City Center if available
+      if (json.cityCoords) {
+        const coords = [json.cityCoords.lat, json.cityCoords.lon];
+        setUserPos(coords);
+        window.hasInitiallyLocated = false; // Reset locate flag to allow flyTo
+      }
+
       if (json.data && json.data.length > 0) {
         setPlaces(json.data);
         if (json.source === 'osm') setFallbackMessage("External Data Source");
@@ -181,7 +352,16 @@ export default function MapPage() {
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
           {fallbackMessage && <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-3 rounded-xl border border-cyan-500/20 tracking-widest">{fallbackMessage}</div>}
           {places.length > 0 ? (
-            places.map((place, index) => <ResultCard key={place.id || index} place={place} index={index} isHovered={hoveredId === place.id || selectedId === place.id} onHoverStart={() => setHoveredId(place.id)} onHoverEnd={() => setHoveredId(null)} onClick={() => setSelectedId(place.id)} />)
+            places.map((place, index) => <ResultCard 
+              key={place.id || index} 
+              place={place} 
+              index={index} 
+              userPos={userPos}
+              isHovered={hoveredId === place.id || selectedId === place.id} 
+              onHoverStart={() => setHoveredId(place.id)} 
+              onHoverEnd={() => setHoveredId(null)} 
+              onClick={() => setSelectedId(place.id)} 
+            />)
           ) : !loading && <div className="flex flex-col items-center justify-center mt-20 opacity-20"><Activity size={60}/><p className="mt-4 font-black uppercase text-xs tracking-[0.3em]">No Signal</p></div>}
         </div>
       </div>
@@ -193,7 +373,7 @@ export default function MapPage() {
             <MapController places={places} selectedId={selectedId} userPos={userPos} routingTo={routingTo} routeData={routeData} />
             <MapButtons handleLocate={handleLocate} setRoutingTo={setRoutingTo} userPos={userPos} />
             {userPos && <Marker position={userPos} icon={L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png", iconSize: [32, 32], iconAnchor: [16, 16] })}><Popup>You are here</Popup></Marker>}
-            {routeData.length > 0 && <Polyline positions={routeData} color="#00d2ff" weight={8} opacity={0.8} lineJoin="round" dashArray="0, 15" lineCap="round" className="animate-pulse" />}
+            {routeData.length > 0 && <Polyline positions={routeData} color="#000000" weight={6} opacity={0.9} lineJoin="round" lineCap="round" />}
             {places.map(place => {
               const lat = parseFloat(place.lat); const lon = parseFloat(place.lon); if (!lat || !lon) return null;
               return (

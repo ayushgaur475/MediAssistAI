@@ -73,12 +73,28 @@ export const searchHospitals = async (req, res) => {
     }
 
     console.log(`[Tier 1 Search] City: "${cleanedCity}", Spec: "${speciality || "NONE"}"`);
+    
+    // Get City Center Coordinates for "User Location Proxy"
+    let cityCoords = null;
+    try {
+      const cityLookUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanedCity)}&countrycodes=in&limit=1`;
+      const cityLookRes = await axios.get(cityLookUrl, {
+        headers: { 'User-Agent': 'MediAsisstAI-App' },
+        timeout: 3000
+      });
+      if (cityLookRes.data && cityLookRes.data[0]) {
+        cityCoords = {
+          lat: parseFloat(cityLookRes.data[0].lat),
+          lon: parseFloat(cityLookRes.data[0].lon)
+        };
+      }
+    } catch (e) { console.error("City center lookup failed", e.message); }
+
     const dbResults = await Hospital.find(queryFilter).limit(100).lean();
 
     if (dbResults.length > 0) {
       console.log(`[Tier 1] Found ${dbResults.length} records in DB.`);
       const mapped = dbResults.map(h => {
-        // ... (existing mapping)
         let lat = 0, lon = 0;
         if (h.Location_Coordinates && h.Location_Coordinates !== "0, 0" && h.Location_Coordinates !== "NA") {
           const parts = h.Location_Coordinates.split(",");
@@ -97,26 +113,22 @@ export const searchHospitals = async (req, res) => {
           source: 'database'
         };
       });
-      return res.status(200).json({ source: 'database', count: mapped.length, data: mapped });
+      return res.status(200).json({ source: 'database', count: mapped.length, cityCoords, data: mapped });
     }
 
     // --- Tier 2: OSM Fallback ---
     console.log(`[Tier 2] DB empty for "${cleanedCity}". Querying OSM...`);
     
-    // Better OSM query: don't force 'hospital' if we have a specific speciality like 'Dentist'
     const osmQuery = speciality ? `${speciality} in ${cleanedCity}` : `hospital in ${cleanedCity}`;
-    
     const osmUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(osmQuery)}&countrycodes=in&limit=20`;
     
     try {
       const osmRes = await axios.get(osmUrl, {
         headers: { 'User-Agent': 'MediAsisstAI-App' },
-        timeout: 5000 // 5s timeout
+        timeout: 5000 
       });
 
       const osmData = osmRes.data || [];
-      console.log(`[Tier 2] OSM returned ${osmData.length} records for "${osmQuery}"`);
-
       const mappedOSM = osmData.map((item, idx) => ({
         id: `osm_${item.place_id || idx}`,
         hospital_name: item.display_name.split(',')[0],
@@ -131,6 +143,7 @@ export const searchHospitals = async (req, res) => {
       return res.status(200).json({
         source: mappedOSM.length > 0 ? 'osm' : 'none',
         count: mappedOSM.length,
+        cityCoords,
         data: mappedOSM
       });
       

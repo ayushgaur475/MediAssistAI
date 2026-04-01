@@ -122,16 +122,37 @@ export default function Home() {
           {/* SMALL CARD: LAB TESTS */}
           <motion.div 
              whileHover={{ y: -10 }}
-             onClick={() => navigate("/map?mode=lab")}
-             className="glass-card p-10 rounded-[2.5rem] flex flex-col justify-between group cursor-pointer"
+             className="glass-card p-10 rounded-[2.5rem] flex flex-col justify-between group cursor-pointer relative"
+             onClick={() => navigate("/labs")}
           >
-            <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400 mb-6 font-bold">
-              <FlaskConical size={32} />
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400 font-bold">
+                <FlaskConical size={32} />
+              </div>
+              <ArrowRight className="text-[var(--text-muted)] group-hover:text-purple-400 transition-all" size={24} />
             </div>
+            
             <div>
               <h3 className="text-2xl font-black mb-2 uppercase">Lab Tests</h3>
-              <p className="text-[var(--text-muted)] text-sm mb-6 font-medium">Home collection & digital reports in 24h.</p>
-              <ArrowRight className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-all" size={24} />
+              <p className="text-[var(--text-muted)] text-sm mb-6 font-medium">Find pathology labs in your city instantly.</p>
+              
+              {/* Inline Search Box */}
+              <div 
+                className="relative mt-2"
+                onClick={(e) => e.stopPropagation()} // Prevent card navigation when clicking input
+              >
+                <input 
+                  type="text"
+                  placeholder="Enter City..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-purple-500 transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      navigate(`/labs?city=${e.target.value}`);
+                    }
+                  }}
+                />
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-400/50" size={14} />
+              </div>
             </div>
           </motion.div>
 
