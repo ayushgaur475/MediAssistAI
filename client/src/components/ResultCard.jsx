@@ -23,7 +23,7 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
 
   return (
     <div 
-      className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-sm glass-card
+      className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-sm glass-card h-full flex flex-col
         ${isHovered ? 'border-cyan-500 shadow-xl transform -translate-y-1 bg-white/20' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'}
       `}
       onMouseEnter={onHoverStart}
@@ -51,9 +51,17 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
         </span>
       </div>
 
-      <p className="text-[var(--text-muted)] text-[11px] mt-3 line-clamp-2 leading-relaxed font-medium">
-        {place.address || place.display_name || "Region location unavailable"}
-      </p>
+      <div className="flex-1">
+        <p className="text-[var(--text-muted)] text-[11px] mt-3 line-clamp-2 leading-relaxed font-medium">
+          {place.address || place.display_name || "Region location unavailable"}
+        </p>
+        
+        {place.tags && place.tags.phone && (
+          <p className="text-[var(--text-main)] text-[11px] mt-2 font-medium flex items-center gap-1">
+            📞 {place.tags.phone}
+          </p>
+        )}
+      </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-between mt-5 gap-3 border-t border-[var(--border-subtle)] pt-4">
         <span className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
@@ -61,14 +69,23 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
           {distance ? `${distance} km away` : "Calculating..."}
         </span>
         <div className="flex gap-2 w-full sm:w-auto">
+          {place.tags && place.tags.phone && (
+            <a 
+              href={`tel:${place.tags.phone}`}
+              className="flex-1 sm:flex-none text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-sm text-center flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Call
+            </a>
+          )}
           <button 
-            className="flex-1 sm:flex-none text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-sm"
+            className="flex-1 sm:flex-none text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-md hover:scale-105 active:scale-95"
             onClick={(e) => {
               e.stopPropagation();
               if (window.handleNavigate) window.handleNavigate(place);
             }}
           >
-            Route
+            Navigate
           </button>
           <button 
             className="flex-1 sm:flex-none text-white bg-gradient-to-r from-cyan-400 to-purple-500 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-lg hover:scale-105 active:scale-95"

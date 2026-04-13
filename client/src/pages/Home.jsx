@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Stethoscope, FlaskConical, Scissors, ArrowRight, Zap, ShieldCheck, Activity } from "lucide-react";
+import { Search, MapPin, Stethoscope, FlaskConical, ArrowRight, Zap, ShieldCheck, Activity } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -12,19 +12,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen transition-colors duration-300 selection:bg-cyan-500/30">
-      
+
       {/* --- HERO SECTION --- */}
       <section className="relative h-[95vh] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src={heroImage} 
-            alt="Hero Background" 
+          <img
+            src={heroImage}
+            alt=""
             className="w-full h-full object-cover opacity-60 dark:opacity-40 scale-105 transition-opacity duration-700"
           />
           {/* Dynamic Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-white/40 to-[var(--bg-main)] dark:from-[#030712]/10 dark:via-[#030712]/60 dark:to-[var(--bg-main)] transition-colors duration-700" />
-          
+
           {/* Animated Glow Blobs */}
           <div className="absolute top-1/4 -left-20 w-96 h-96 bg-cyan-500/20 rounded-full blur-[120px] animate-pulse-slow" />
           <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-[120px] animate-pulse-slow delay-1000" />
@@ -46,7 +46,7 @@ export default function Home() {
           </motion.div>
 
           {/* Glassmorphic Search Bar */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
@@ -54,9 +54,9 @@ export default function Home() {
           >
             <div className="flex-1 flex items-center gap-3 px-6 py-4 border-r border-[var(--border-subtle)] w-full md:w-auto">
               <MapPin className="text-cyan-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Where are you? (City)" 
+              <input
+                type="text"
+                placeholder="Where are you? (City)"
                 className="bg-transparent border-none outline-none w-full text-lg font-medium placeholder:text-gray-500 text-[var(--text-main)]"
                 value={cityValue}
                 onChange={(e) => setCityValue(e.target.value)}
@@ -65,16 +65,16 @@ export default function Home() {
             </div>
             <div className="flex-[1.5] flex items-center gap-3 px-6 py-4 w-full md:w-auto">
               <Search className="text-purple-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="What's wrong? (Symptoms or Specialist)" 
+              <input
+                type="text"
+                placeholder="What's wrong? (Symptoms or Specialist)"
                 className="bg-transparent border-none outline-none w-full text-lg font-medium placeholder:text-gray-500 text-[var(--text-main)]"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && navigate(`/map?city=${cityValue}&speciality=${searchValue}`)}
               />
             </div>
-            <button 
+            <button
               onClick={() => navigate(`/map?city=${cityValue}&speciality=${searchValue}`)}
               className="btn-premium w-full md:w-auto"
             >
@@ -95,13 +95,13 @@ export default function Home() {
 
       {/* --- FEATURE BENTO GRID --- */}
       <section className="py-24 px-6 max-w-7xl mx-auto">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           {/* LARGE CARD: FIND DOCTORS */}
-          <motion.div 
+          <motion.div
             whileHover={{ y: -10 }}
             onClick={() => navigate("/map?mode=doctor")}
             className="md:col-span-2 glass-card p-10 rounded-[2.5rem] relative overflow-hidden group cursor-pointer"
@@ -111,7 +111,7 @@ export default function Home() {
             </div>
             <div className="relative z-10">
               <span className="px-4 py-1 bg-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-6 inline-block">Verified Database</span>
-              <h3 className="text-4xl font-black mb-4">Find Elite <br/> Doctors Near You</h3>
+              <h3 className="text-4xl font-black mb-4">Find Elite <br /> Doctors Near You</h3>
               <p className="text-[var(--text-muted)] max-w-md mb-8 font-medium">Direct booking with confirmed slots. No more waiting lines, just precision care.</p>
               <div className="flex items-center gap-2 text-cyan-400 font-bold group-hover:gap-4 transition-all uppercase text-xs tracking-widest">
                 Start Search <ArrowRight size={16} />
@@ -120,10 +120,10 @@ export default function Home() {
           </motion.div>
 
           {/* SMALL CARD: LAB TESTS */}
-          <motion.div 
-             whileHover={{ y: -10 }}
-             className="glass-card p-10 rounded-[2.5rem] flex flex-col justify-between group cursor-pointer relative"
-             onClick={() => navigate("/labs")}
+          <motion.div
+            whileHover={{ y: -10 }}
+            className="glass-card p-10 rounded-[2.5rem] flex flex-col justify-between group cursor-pointer relative"
+            onClick={() => navigate("/labs")}
           >
             <div className="flex justify-between items-start mb-6">
               <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center text-purple-400 font-bold">
@@ -131,17 +131,17 @@ export default function Home() {
               </div>
               <ArrowRight className="text-[var(--text-muted)] group-hover:text-purple-400 transition-all" size={24} />
             </div>
-            
+
             <div>
               <h3 className="text-2xl font-black mb-2 uppercase">Lab Tests</h3>
               <p className="text-[var(--text-muted)] text-sm mb-6 font-medium">Find pathology labs in your city instantly.</p>
-              
+
               {/* Inline Search Box */}
-              <div 
+              <div
                 className="relative mt-2"
                 onClick={(e) => e.stopPropagation()} // Prevent card navigation when clicking input
               >
-                <input 
+                <input
                   type="text"
                   placeholder="Enter City..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-purple-500 transition-all"
@@ -156,46 +156,35 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* SMALL CARD: SURGERIES */}
-          <motion.div 
-             whileHover={{ y: -10 }}
-             onClick={() => navigate("/map?mode=surgery")}
-             className="glass-card p-10 rounded-[2.5rem] flex flex-col justify-between group cursor-pointer"
-          >
-            <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center text-red-400 mb-6 text-white font-bold">
-              <Scissors size={24} />
-            </div>
-            <div>
-              <h3 className="text-2xl font-black mb-2 uppercase">Surgeries</h3>
-              <p className="text-[var(--text-muted)] text-sm mb-6 font-medium">Premium centers for safe procedures.</p>
-              <ArrowRight className="text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-all" size={24} />
-            </div>
-          </motion.div>
 
-          {/* STATS CARD */}
-          <div className="md:col-span-2 glass-card p-10 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-10">
-            <div className="flex-1">
-               <h4 className="text-xl font-bold mb-4 flex items-center gap-2">
-                 <Zap className="text-yellow-400 fill-yellow-400" size={20} />
-                 Live Update
-               </h4>
-               <div className="flex gap-4">
-                 <div className="text-center">
-                   <p className="text-3xl font-black text-neon">12k+</p>
-                   <p className="text-[10px] text-[var(--text-muted)] uppercase font-black">Hospitals Connected</p>
-                 </div>
-                 <div className="text-center border-l border-[var(--border-subtle)] pl-4">
-                   <p className="text-3xl font-black text-neon">0.5s</p>
-                   <p className="text-[10px] text-[var(--text-muted)] uppercase font-black">Search Speed</p>
-                 </div>
-               </div>
+
+          {/* STATS CARD (Full Width) */}
+          <div className="md:col-span-3 glass-card p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-2xl flex items-center justify-center text-cyan-400">
+                <Zap className="fill-cyan-400" size={24} />
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white">Platform Status</h4>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Live System Telemetry</p>
+              </div>
             </div>
-            <div className="flex-1 flex gap-2">
-               {[1,2,3,4].map(i => (
-                 <div key={i} className="flex-1 h-32 bg-[var(--bg-card)] rounded-2xl relative overflow-hidden group">
-                   <div className="absolute inset-x-0 bottom-0 bg-cyan-500/50 group-hover:h-full transition-all duration-700" style={{ height: `${20 * i}%` }} />
-                 </div>
-               ))}
+
+            <div className="flex flex-1 justify-around w-full md:w-auto gap-8">
+              <div className="text-center md:text-left">
+                <p className="text-4xl font-black text-white">12k+</p>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Medical Entities</p>
+              </div>
+              <div className="w-px h-12 bg-[var(--border-subtle)] hidden md:block" />
+              <div className="text-center md:text-left">
+                <p className="text-4xl font-black text-white">0.5s</p>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Query Latency</p>
+              </div>
+              <div className="w-px h-12 bg-[var(--border-subtle)] hidden md:block" />
+              <div className="text-center md:text-left">
+                <p className="text-4xl font-black text-white">99.9%</p>
+                <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Uptime Score</p>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -204,15 +193,15 @@ export default function Home() {
       {/* --- WHY US / TRUST SECTION --- */}
       <section className="bg-[var(--bg-card)] py-20 px-6 border-y border-[var(--border-subtle)]">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-center gap-12 grayscale opacity-50 contrast-125 dark:contrast-100 transition-all">
-          <div className="flex items-center gap-3"><ShieldCheck size={28}/> <span className="font-black tracking-widest text-sm uppercase">Secure Data</span></div>
-          <div className="flex items-center gap-3"><Activity size={28}/> <span className="font-black tracking-widest text-sm uppercase">Verified Only</span></div>
-          <div className="flex items-center gap-3"><Zap size={28}/> <span className="font-black tracking-widest text-sm uppercase">Instant Results</span></div>
+          <div className="flex items-center gap-3"><ShieldCheck size={28} /> <span className="font-black tracking-widest text-sm uppercase">Secure Data</span></div>
+          <div className="flex items-center gap-3"><Activity size={28} /> <span className="font-black tracking-widest text-sm uppercase">Verified Only</span></div>
+          <div className="flex items-center gap-3"><Zap size={28} /> <span className="font-black tracking-widest text-sm uppercase">Instant Results</span></div>
         </div>
       </section>
 
       {/* --- FOOTER TICKET --- */}
       <footer className="py-10 text-center text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.5em]">
-        © 2026 MediAsisstAI Corp // Optimized for Gen-Z
+        © 2026 MediAsisstAI Corp
       </footer>
     </div>
   );

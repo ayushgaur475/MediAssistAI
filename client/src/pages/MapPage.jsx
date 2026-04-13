@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Tooltip, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { Activity, AlertCircle, Navigation } from "lucide-react";
+import { Activity, AlertCircle, Navigation, Crosshair } from "lucide-react";
 import ResultCard from "../components/ResultCard";
+import SearchBar from "../components/SearchBar";
+import { useLiveLocation } from "../hooks/useLiveLocation";
 
 // Handle Map Animations & Bounds
-function MapController({ places, selectedId, userPos, routingTo, routeData }) {
+function MapController({ places, selectedId, userPos, routingTo, routeData, livePos, followUser }) {
   const map = useMap();
 
   const isInsideIndia = (lat, lon) => {
@@ -31,19 +33,34 @@ function MapController({ places, selectedId, userPos, routingTo, routeData }) {
       return;
     }
 
-    // Priority 3: All Search Results
+    // Priority 3: Live User Position (Follow Mode)
+    if (followUser && livePos) {
+      map.flyTo(livePos, map.getZoom() < 15 ? 15 : map.getZoom(), { animate: true, duration: 1 });
+      return;
+    }
+
+    // Priority 4: All Search Results
     const validPlaces = places.filter(p => p.lat !== 0 && p.lon !== 0 && isInsideIndia(p.lat, p.lon));
     if (validPlaces.length > 0) {
       const bounds = L.latLngBounds(validPlaces.map(p => [p.lat, p.lon]));
       map.fitBounds(bounds, { padding: [50, 50], animate: true });
     }
-  }, [places, selectedId, map, userPos, routingTo, routeData]);
+  }, [places, selectedId, map, userPos, routingTo, routeData, livePos, followUser]);
+
+  // Disable follow mode on manual drag
+  useEffect(() => {
+    const handleMove = () => {
+      // Logic to detect manual drag could be added here if we wanted to auto-disable follow mode
+    };
+    map.on('dragstart', handleMove);
+    return () => map.off('dragstart', handleMove);
+  }, [map]);
 
   return null;
 }
 
 // Map Control UI Component
-function MapButtons({ handleLocate, setRoutingTo, userPos }) {
+function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollowUser }) {
   const map = useMap();
   
   useEffect(() => {
@@ -66,6 +83,19 @@ function MapButtons({ handleLocate, setRoutingTo, userPos }) {
 
       <button onClick={(e) => { e.stopPropagation(); setRoutingTo(null); window.hasInitiallyLocated = false; }} className="w-12 h-12 bg-gray-900 text-purple-400 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-white/10 border border-white/10" title="Reset Map">
          <svg className="w-6 h-6 rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
+      </button>
+
+      {/* Recenter / Follow Me Button */}
+      <button 
+        onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser) handleLocate(); }} 
+        className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center transition-all border ${
+          followUser 
+          ? "bg-cyan-500 text-white border-cyan-400 scale-110" 
+          : "bg-gray-900 text-gray-400 border-white/10 hover:bg-white/10"
+        }`} 
+        title={followUser ? "Stop Following" : "Follow My Location"}
+      >
+        <Crosshair size={24} className={followUser ? "animate-spin-slow" : ""} />
       </button>
     </div>
   );
@@ -91,12 +121,19 @@ export default function MapPage() {
   const [userPos, setUserPos] = useState(null);
   const [routingTo, setRoutingTo] = useState(null);
   const [routeData, setRouteData] = useState([]);
+  const [followUser, setFollowUser] = useState(false);
+  const [isSearchedCity, setIsSearchedCity] = useState(false);
+
+  const { location: livePos, error: liveError, isTracking } = useLiveLocation();
 
   const [allDistricts, setAllDistricts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [allSpecialities, setAllSpecialities] = useState([]);
   const [specSuggestions, setSpecSuggestions] = useState([]);
+  // Stores exact GPS coords from "Use My Location" so Apply Search uses them too
+  const [gpsCoords, setGpsCoords] = useState(null);
 
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const markerRefs = useRef({});
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "API_KEY";
   
@@ -108,13 +145,10 @@ export default function MapPage() {
     if (cityParam) setCity(cityParam);
     if (specParam) setSpeciality(specParam);
 
-    if (modeParam === "emergency") {
-      handleEmergencySequence();
-    } else if (cityParam) {
-      // Small delay to ensure state is set or just call directly with values
+    if (cityParam && cityParam !== "My Location") {
       handleInitialSearch(cityParam, specParam || "");
-    } else if (modeParam === "doctor") {
-      handleLocate(); // Try to find nearby doctors if mode is doctor but no city
+    } else if (modeParam === "emergency") {
+      handleEmergencySequence();
     }
   }, [searchParams]);
 
@@ -125,7 +159,7 @@ export default function MapPage() {
     }
     setLoading(true); setFallbackMessage("");
     try {
-      const res = await fetch(`http://localhost:5000/api/hospitals/search?city=${encodeURIComponent(c)}&speciality=${encodeURIComponent(s)}`);
+      const res = await fetch(`${API_URL}/api/hospitals/search?city=${encodeURIComponent(c)}&speciality=${encodeURIComponent(s)}`);
       const json = await res.json();
       if (json.cityCoords) setUserPos([json.cityCoords.lat, json.cityCoords.lon]);
       if (json.data && json.data.length > 0) setPlaces(json.data);
@@ -139,7 +173,7 @@ export default function MapPage() {
     setFallbackMessage("🚨 EMERGENCY SOS ACTIVE");
     
     if (!navigator.geolocation) {
-      alert("Geolocation required for SOS");
+      setFallbackMessage("Geolocation not supported");
       setIsEmergencyLoading(false);
       setLoading(false);
       return;
@@ -148,9 +182,10 @@ export default function MapPage() {
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const p = [pos.coords.latitude, pos.coords.longitude];
       setUserPos(p);
+      setIsSearchedCity(false);
       await fetchNearestHospital(p);
     }, (err) => {
-      alert("Allow location to use Emergency SOS");
+      setFallbackMessage("⚠️ SOS: Please allow location access");
       setIsEmergencyLoading(false);
       setLoading(false);
     });
@@ -261,8 +296,8 @@ export default function MapPage() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/hospitals/districts").then(res => res.json()).then(json => setAllDistricts(json.data || []));
-    fetch("http://localhost:5000/api/hospitals/specialities").then(res => res.json()).then(json => {
+    fetch(`${API_URL}/api/hospitals/districts`).then(res => res.json()).then(json => setAllDistricts(json.data || []));
+    fetch(`${API_URL}/api/hospitals/specialities`).then(res => res.json()).then(json => {
       const combined = Array.from(new Set([...(json.data || []), ...COMMON_SPECIALITIES])).sort();
       setAllSpecialities(combined);
     });
@@ -272,6 +307,7 @@ export default function MapPage() {
     window.handleNavigate = async (hosp) => {
       setRoutingTo(hosp);
       setSelectedId(hosp.id);
+      document.getElementById('map-view')?.scrollIntoView({ behavior: 'smooth' });
       if (!userPos) { handleLocate(); }
       else { fetchRoute(userPos, hosp); }
     };
@@ -292,104 +328,407 @@ export default function MapPage() {
   };
 
   const handleLocate = () => {
-    if (!navigator.geolocation) return alert("Geolocation not supported");
+    if (!navigator.geolocation) return setFallbackMessage("Geolocation not supported");
+    
     navigator.geolocation.getCurrentPosition((pos) => {
       const p = [pos.coords.latitude, pos.coords.longitude];
       setUserPos(p);
+      setIsSearchedCity(false);
       if (routingTo) fetchRoute(p, routingTo);
-    }, (err) => alert("Allow location to use navigation."));
+    }, (err) => setFallbackMessage("Please enable location access."));
   };
 
-  const handleCityChange = (v) => { setCity(v); setSuggestions(v ? allDistricts.filter(d => d.toLowerCase().startsWith(v.toLowerCase())).slice(0, 5) : []); };
+  // Fetch hospitals near exact GPS coordinates using Overpass API
+  // Uses exact coordinates so results are always local — same as map GPS button
+  const fetchNearbyByCoords = async (lat, lon, spec = "") => {
+    setLoading(true);
+    setSelectedId(null);
+    setRoutingTo(null);
+    setRouteData([]);
+    setFallbackMessage("");
+    setUserPos([lat, lon]);
+    setIsSearchedCity(false);
+    window.hasInitiallyLocated = false;
+
+    const RADIUS_M = 20000; // 20km radius for Overpass
+    const RADIUS_DEG = 0.2; // ~22km bounding box for Nominatim fallback
+
+    // Helper: straight-line distance in km (Haversine approximation)
+    const distKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // Build Overpass query
+    let amenityFilter = "";
+    
+    // Convert common specialities to OSM specific tags
+    const specLower = spec.toLowerCase().trim();
+    if (specLower === "dentist" || specLower.includes("dental")) {
+      amenityFilter = `node["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});way["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});`;
+    } else if (specLower.includes("pharmacy")) {
+      amenityFilter = `node["amenity"="pharmacy"](around:${RADIUS_M},${lat},${lon});way["amenity"="pharmacy"](around:${RADIUS_M},${lat},${lon});`;
+    } else if (specLower.includes("clinic") || specLower.includes("doctor")) {
+      amenityFilter = `node["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});way["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});`;
+    } else if (spec) {
+      // General speciality: search for hospital/clinic AND require the speciality name in the 'name' or 'healthcare:speciality' tag
+      // This is a fuzzy overpass search
+      amenityFilter = `
+        node["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
+        way["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
+        node["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
+        way["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
+      `;
+    } else {
+      // No speciality
+      amenityFilter = `node["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});way["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});`;
+    }
+
+    const query = `[out:json][timeout:30];(${amenityFilter});out center body;`;
+
+    const mirrors = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter",
+      "https://overpass.osm.ch/api/interpreter"
+    ];
+
+    let json = null;
+    for (const mirror of mirrors) {
+      try {
+        const res = await fetch(mirror, {
+          method: "POST",
+          body: query,
+          signal: AbortSignal.timeout(12000)
+        });
+        if (!res.ok || res.status === 403 || res.status === 429) continue;
+        const parsed = JSON.parse(await res.text());
+        if (parsed?.elements?.length > 0) { json = parsed; break; }
+      } catch { /* try next mirror */ }
+    }
+
+    if (json?.elements?.length > 0) {
+      const mapped = json.elements
+        .map(el => ({
+          id: `osm_${el.id}`,
+          hospital_name: el.tags?.name || "Nearby Hospital",
+          address: el.tags?.["addr:full"] || el.tags?.["addr:street"] || el.tags?.["addr:city"] || "Nearby Facility",
+          lat: el.lat ?? el.center?.lat,
+          lon: el.lon ?? el.center?.lon,
+          speciality: el.tags?.amenity || "hospital",
+          source: 'osm'
+        }))
+        .filter(h => h.lat && h.lon)
+        // Hard distance filter — drop anything beyond 25km
+        .filter(h => distKm(lat, lon, h.lat, h.lon) <= 25)
+        .sort((a, b) => distKm(lat, lon, a.lat, a.lon) - distKm(lat, lon, b.lat, b.lon));
+
+      setPlaces(mapped);
+      setFallbackMessage(`📍 ${mapped.length} hospitals found within 20km of your location`);
+    } else {
+      // Nominatim fallback — use strict bounding box (bounded=1) to prevent all-India results
+      try {
+        const minLat = lat - RADIUS_DEG, maxLat = lat + RADIUS_DEG;
+        const minLon = lon - RADIUS_DEG, maxLon = lon + RADIUS_DEG;
+        // viewbox format: left,top,right,bottom  bounded=1 strictly restricts to this box
+        const nomQuery = spec ? `${spec} hospital` : 'hospital';
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(nomQuery)}&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1&countrycodes=in&limit=20`;
+        const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'MediAsisstAI-App' } });
+        const nomData = await nomRes.json();
+
+        if (nomData?.length > 0) {
+          const mapped = nomData
+            .map(item => ({
+              id: `osm_${item.place_id}`,
+              hospital_name: item.display_name.split(',')[0],
+              address: item.display_name,
+              lat: parseFloat(item.lat),
+              lon: parseFloat(item.lon),
+              source: 'osm'
+            }))
+            // Hard distance filter even on Nominatim results
+            .filter(h => distKm(lat, lon, h.lat, h.lon) <= 25)
+            .sort((a, b) => distKm(lat, lon, a.lat, a.lon) - distKm(lat, lon, b.lat, b.lon));
+
+          if (mapped.length > 0) {
+            setPlaces(mapped);
+            setFallbackMessage(`📍 ${mapped.length} hospitals found near your location`);
+          } else {
+            setFallbackMessage("No hospitals found within 25km of your location. Try searching by city name.");
+          }
+        } else {
+          setFallbackMessage("No hospitals found near your location. Try searching by city name.");
+        }
+      } catch {
+        setFallbackMessage("Unable to search nearby hospitals. Please try searching by city.");
+      }
+    }
+    setLoading(false);
+  };
+
+  // Manually typing a city clears GPS mode
+  const handleCityChange = (v) => {
+    setCity(v);
+    setGpsCoords(null); // user is typing, stop using GPS coords
+    setSuggestions(v ? allDistricts.filter(d => d.toLowerCase().startsWith(v.toLowerCase())).slice(0, 5) : []);
+  };
   const handleSpecChange = (v) => { setSpeciality(v); setSpecSuggestions(v ? allSpecialities.filter(s => s.toLowerCase().startsWith(v.toLowerCase())).slice(0, 5) : []); };
 
-  const handleSearch = async () => {
-    if (!city.trim()) return;
+  const handleSearch = async (overrideCity) => {
+    // If GPS coords are saved (from "Use My Location"), use them for accuracy
+    if (gpsCoords && typeof overrideCity !== 'string') {
+      fetchNearbyByCoords(gpsCoords[0], gpsCoords[1], speciality);
+      return;
+    }
+    const searchCity = (typeof overrideCity === 'string' ? overrideCity : city).trim();
+    if (!searchCity) return;
     setLoading(true); setSelectedId(null); setRoutingTo(null); setRouteData([]); setFallbackMessage("");
     try {
-      const res = await fetch(`http://localhost:5000/api/hospitals/search?city=${encodeURIComponent(city)}&speciality=${encodeURIComponent(speciality)}`);
+      const res = await fetch(`${API_URL}/api/hospitals/search?city=${encodeURIComponent(searchCity)}&speciality=${encodeURIComponent(speciality)}`);
       const json = await res.json();
       
       // Update User Position to City Center if available
       if (json.cityCoords) {
         const coords = [json.cityCoords.lat, json.cityCoords.lon];
         setUserPos(coords);
-        window.hasInitiallyLocated = false; // Reset locate flag to allow flyTo
+        setIsSearchedCity(true);
+        window.hasInitiallyLocated = false;
       }
 
       if (json.data && json.data.length > 0) {
         setPlaces(json.data);
         if (json.source === 'osm') setFallbackMessage("External Data Source");
-      } else { setPlaces([]); setFallbackMessage(`No hospitals found in ${city}.`); }
+      } else { setPlaces([]); setFallbackMessage(`No hospitals found in ${searchCity}.`); }
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
   useEffect(() => { if (selectedId && markerRefs.current[selectedId]) markerRefs.current[selectedId].openPopup(); }, [selectedId]);
 
-  const normalIcon = L.icon({ iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png", iconSize: [25, 41], iconAnchor: [12, 41] });
-  const highlightedIcon = L.icon({ iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png", iconSize: [25, 41], iconAnchor: [12, 41] });
+  const hospitalPinHtml = `
+    <div style="position: relative; width: 24px; height: 32px; display: flex; justify-content: center;">
+      <div style="width: 24px; height: 24px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 2;">
+        <div style="width: 18px; height: 18px; background-color: #ea4335; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; font-family: sans-serif;">H</div>
+      </div>
+      <div style="position: absolute; bottom: 2px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid white; z-index: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));"></div>
+    </div>
+  `;
 
-  return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-96px)] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
-      {/* Sidebar */}
-      <div className="w-full md:w-[30%] min-w-[320px] max-w-[400px] flex flex-col bg-[var(--bg-main)] z-10 overflow-hidden border-r border-[var(--border-subtle)]">
-        <div className="p-6 bg-[var(--bg-card)] border-b border-[var(--border-subtle)]">
-          <h2 className="text-xl font-black mb-6 uppercase tracking-tighter"><span className="text-neon">Medi.</span>Map</h2>
-          <div className="space-y-4">
-            <div className="relative">
-              <input type="text" placeholder="Enter City" className="w-full p-4 glass-card bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl text-sm outline-none focus:border-cyan-400 text-[var(--text-main)] transition-all" value={city} onChange={e => handleCityChange(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
-              {suggestions.length > 0 && <div className="absolute top-full left-0 w-full mt-2 glass-card rounded-2xl z-50 overflow-hidden shadow-2xl">{suggestions.map(s => <div key={s} className="p-4 hover:bg-white/10 cursor-pointer text-sm font-bold" onClick={() => { setCity(s); setSuggestions([]); }}>📍 {s}</div>)}</div>}
-            </div>
-            <div className="relative">
-              <input type="text" placeholder="Speciality" className="w-full p-4 glass-card bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl text-sm outline-none focus:border-purple-400 text-[var(--text-main)] transition-all" value={speciality} onChange={e => handleSpecChange(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
-              {specSuggestions.length > 0 && <div className="absolute top-full left-0 w-full mt-2 glass-card rounded-2xl z-50 overflow-hidden shadow-2xl">{specSuggestions.map(s => <div key={s} className="p-4 hover:bg-white/10 cursor-pointer text-sm font-bold" onClick={() => { setSpeciality(s); setSpecSuggestions([]); }}>🩺 {s}</div>)}</div>}
-            </div>
-            <button onClick={handleSearch} disabled={loading} className="w-full py-4 rounded-2xl font-black text-white bg-gradient-to-r from-cyan-400 to-purple-500 shadow-xl hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest text-xs">
-              {loading ? "Scanning..." : "Apply Search"}
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-          {fallbackMessage && <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-3 rounded-xl border border-cyan-500/20 tracking-widest">{fallbackMessage}</div>}
-          {places.length > 0 ? (
-            places.map((place, index) => <ResultCard 
-              key={place.id || index} 
-              place={place} 
-              index={index} 
-              userPos={userPos}
-              isHovered={hoveredId === place.id || selectedId === place.id} 
-              onHoverStart={() => setHoveredId(place.id)} 
-              onHoverEnd={() => setHoveredId(null)} 
-              onClick={() => setSelectedId(place.id)} 
-            />)
-          ) : !loading && <div className="flex flex-col items-center justify-center mt-20 opacity-20"><Activity size={60}/><p className="mt-4 font-black uppercase text-xs tracking-[0.3em]">No Signal</p></div>}
+  const highlightedHospitalPinHtml = `
+    <div style="position: relative; width: 28px; height: 38px; display: flex; justify-content: center; z-index: 1000; transform: translateY(-4px);">
+      <div style="width: 28px; height: 28px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.4); z-index: 2;">
+        <div style="width: 22px; height: 22px; background-color: #d32f2f; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 13px; font-family: sans-serif;">H</div>
+      </div>
+      <div style="position: absolute; bottom: 2px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid white; z-index: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.3));"></div>
+    </div>
+  `;
+
+  const searchedPinHtml = `
+    <div style="position: relative; width: 28px; height: 38px; display: flex; justify-content: center; z-index: 900; transform: translateY(-4px);">
+      <div style="width: 28px; height: 28px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.4); z-index: 2;">
+        <div style="width: 20px; height: 20px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>
         </div>
       </div>
+      <div style="position: absolute; bottom: 2px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid white; z-index: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.3));"></div>
+    </div>
+  `;
 
-      <div className="flex-1 p-4 bg-[var(--bg-main)] flex flex-col">
-        <div className="flex-1 relative rounded-[3rem] overflow-hidden shadow-[0_0_50px_rgba(0,210,255,0.1) dark:shadow-[0_0_50px_rgba(0,210,255,0.15)] border-[10px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
-          <MapContainer center={[20.5937, 78.9629]} zoom={5} className="h-full w-full" zoomControl={false}>
-            <TileLayer url={`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`} attribution="&copy; MapTiler &copy; OSM" />
-            <MapController places={places} selectedId={selectedId} userPos={userPos} routingTo={routingTo} routeData={routeData} />
-            <MapButtons handleLocate={handleLocate} setRoutingTo={setRoutingTo} userPos={userPos} />
-            {userPos && <Marker position={userPos} icon={L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png", iconSize: [32, 32], iconAnchor: [16, 16] })}><Popup>You are here</Popup></Marker>}
-            {routeData.length > 0 && <Polyline positions={routeData} color="#000000" weight={6} opacity={0.9} lineJoin="round" lineCap="round" />}
-            {places.map(place => {
-              const lat = parseFloat(place.lat); const lon = parseFloat(place.lon); if (!lat || !lon) return null;
-              return (
-                <Marker key={place.id} position={[lat, lon]} icon={selectedId === place.id ? highlightedIcon : normalIcon} ref={r => { if (r) markerRefs.current[place.id] = r; }} eventHandlers={{ click: () => setSelectedId(place.id) }}>
-                  <Popup className="custom-popup">
-                    <div className="min-w-[200px] p-2 bg-[var(--bg-main)] text-[var(--text-main)] rounded-xl">
-                      <h4 className="font-black text-neon text-sm uppercase leading-tight mb-2 tracking-tighter">{place.hospital_name}</h4>
-                      <p className="text-[10px] text-[var(--text-muted)] mb-4 font-medium">{place.address}</p>
-                      <button className="w-full bg-gradient-to-r from-cyan-400 to-purple-500 text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-md" onClick={() => window.handleNavigate(place)}>Navigate Now</button>
+  const normalIcon = L.divIcon({ className: 'empty-class', html: hospitalPinHtml, iconSize: [24, 32], iconAnchor: [12, 32], tooltipAnchor: [12, -20] });
+  const highlightedIcon = L.divIcon({ className: 'empty-class', html: highlightedHospitalPinHtml, iconSize: [28, 38], iconAnchor: [14, 38], tooltipAnchor: [14, -24] });
+  const searchedLocationIcon = L.divIcon({ className: 'empty-class', html: searchedPinHtml, iconSize: [28, 38], iconAnchor: [14, 38], tooltipAnchor: [14, -24] });
+  const userLocationIcon = L.divIcon({
+    className: 'empty-class',
+    html: `<div class="relative flex items-center justify-center">
+             <div class="absolute w-8 h-8 bg-blue-500/30 rounded-full animate-user-pulse"></div>
+             <div class="relative w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+           </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-96px)] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
+
+      {/* ─── TOP SEARCH BAR ─── */}
+      <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <h2 className="text-base font-black uppercase tracking-tighter whitespace-nowrap hidden md:block">
+            <span className="text-neon">Medi.</span>Map
+          </h2>
+          <div className="flex-1">
+            <SearchBar
+              city={city}
+              setCity={setCity}
+              speciality={speciality}
+              setSpeciality={setSpeciality}
+              handleSearch={handleSearch}
+              onLocationDetected={(detectedCity, lat, lon) => {
+                setCity(detectedCity);
+                if (lat && lon) {
+                  setGpsCoords([lat, lon]); // save so Apply Search reuses them
+                  fetchNearbyByCoords(lat, lon, speciality);
+                } else {
+                  handleSearch(detectedCity);
+                }
+              }}
+              citySuggestions={suggestions}
+              onCityChange={handleCityChange}
+              specSuggestions={specSuggestions}
+              onSpecChange={handleSpecChange}
+            />
+          </div>
+        </div>
+        {/* Status / fallback message */}
+        {(fallbackMessage || loading || isEmergencyLoading) && (
+          <div className="max-w-7xl mx-auto mt-2">
+            {isEmergencyLoading && (
+              <div className="flex items-center gap-2 bg-red-500/10 text-red-400 text-[10px] font-black uppercase p-2 rounded-xl border border-red-500/20 tracking-widest animate-pulse">
+                <AlertCircle size={12} /> 🚨 SOS Active — Locating nearest hospital...
+              </div>
+            )}
+            {!isEmergencyLoading && fallbackMessage && (
+              <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-2 rounded-xl border border-cyan-500/20 tracking-widest">
+                {fallbackMessage}
+              </div>
+            )}
+            {loading && !isEmergencyLoading && (
+              <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest animate-pulse">
+                Scanning hospitals...
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Live Location Error Toast */}
+        {liveError && (
+          <div className="max-w-7xl mx-auto mt-2">
+            <div className="flex items-center gap-2 bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase p-2 rounded-xl border border-amber-500/20 tracking-widest">
+              <AlertCircle size={12} /> {liveError}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ─── BODY: Map top + Results below ─── */}
+      <div className="flex flex-col flex-1 overflow-y-auto w-full hide-scrollbar">
+
+        {/* Map */}
+        <div id="map-view" className="w-full h-[60vh] shrink-0 p-3 bg-[var(--bg-main)] flex flex-col">
+          <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(0,210,255,0.08)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
+            <MapContainer center={[20.5937, 78.9629]} zoom={5} className="h-full w-full" zoomControl={false}>
+              <LayersControl position="topright">
+                <LayersControl.BaseLayer checked name="Roadmap">
+                  <TileLayer 
+                    url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                    subdomains={['mt0','mt1','mt2','mt3']}
+                    attribution="&copy; Google Maps"
+                  />
+                </LayersControl.BaseLayer>
+                <LayersControl.BaseLayer name="Satellite">
+                  <TileLayer 
+                    url="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                    subdomains={['mt0','mt1','mt2','mt3']}
+                    attribution="&copy; Google Maps"
+                  />
+                </LayersControl.BaseLayer>
+                <LayersControl.BaseLayer name="Hybrid">
+                  <TileLayer 
+                    url="https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    subdomains={['mt0','mt1','mt2','mt3']}
+                    attribution="&copy; Google Maps"
+                  />
+                </LayersControl.BaseLayer>
+              </LayersControl>
+              <MapController 
+                places={places} 
+                selectedId={selectedId} 
+                userPos={userPos} 
+                routingTo={routingTo} 
+                routeData={routeData} 
+                livePos={livePos}
+                followUser={followUser}
+              />
+              <MapButtons 
+                handleLocate={handleLocate} 
+                setRoutingTo={setRoutingTo} 
+                userPos={userPos} 
+                followUser={followUser}
+                setFollowUser={setFollowUser}
+              />
+              {livePos && (
+                <Marker position={livePos} icon={userLocationIcon}>
+                  <Popup className="rounded-xl">
+                    <div className="text-center p-1">
+                      <p className="font-bold text-gray-900 text-xs">You are here</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Live Tracking Active</p>
                     </div>
                   </Popup>
                 </Marker>
-              );
-            })}
-          </MapContainer>
+              )}
+              {userPos && (!livePos || isSearchedCity) && (
+                <Marker 
+                  position={userPos} 
+                  icon={isSearchedCity ? searchedLocationIcon : userLocationIcon}
+                >
+                  <Popup className="rounded-xl">
+                    <div className="text-center p-1">
+                      <p className={`font-bold ${isSearchedCity ? 'text-blue-600' : 'text-gray-900'} text-xs`}>
+                        {isSearchedCity ? 'Searched Location' : 'You are here'}
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        {isSearchedCity ? city : 'Location Detected'}
+                      </p>
+                    </div>
+                  </Popup>
+                </Marker>
+              )}
+              {routeData.length > 0 && <Polyline positions={routeData} color="#3b82f6" weight={6} opacity={0.9} lineJoin="round" lineCap="round" />}
+              {places.filter(place => !selectedId || place.id === selectedId).map(place => {
+                const lat = parseFloat(place.lat); const lon = parseFloat(place.lon); if (!lat || !lon) return null;
+                return (
+                  <Marker key={place.id} position={[lat, lon]} icon={selectedId === place.id ? highlightedIcon : normalIcon} ref={r => { if (r) markerRefs.current[place.id] = r; }} eventHandlers={{ click: () => { setSelectedId(place.id); setRouteData([]); setRoutingTo(null); } }} />
+                );
+              })}
+            </MapContainer>
+          </div>
         </div>
+
+        {/* Results Grid Layout */}
+        <div className="w-full bg-[var(--bg-main)] p-4 shrink-0 z-10 mt-2">
+          {places.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+              {places.map((place, index) => (
+                <div key={place.id || index} className="w-full">
+                  <ResultCard 
+                    place={place} 
+                    index={index} 
+                    userPos={userPos}
+                    isHovered={hoveredId === place.id || selectedId === place.id} 
+                    onHoverStart={() => setHoveredId(place.id)} 
+                    onHoverEnd={() => setHoveredId(null)} 
+                    onClick={() => {
+                      setSelectedId(place.id);
+                      setRouteData([]);
+                      setRoutingTo(null);
+                      document.getElementById('map-view')?.scrollIntoView({ behavior: 'smooth' });
+                    }} 
+                  />
+                </div>
+              ))}
+            </div>
+          ) : !loading && (
+            <div className="flex flex-col items-center justify-center p-12 opacity-20">
+              <Activity size={56}/>
+              <p className="mt-4 font-black uppercase text-xs tracking-[0.3em]">No Signal</p>
+              <p className="text-[9px] text-center mt-2 tracking-wider">Enter a city above to begin</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

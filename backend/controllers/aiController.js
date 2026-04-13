@@ -1,56 +1,132 @@
 /**
  * AI Doctor Medical Brain
- * Handles symptom-to-specialist mapping and general guidance.
+ * Intelligently interacts with Groq AI for health guidance.
  */
-
-const MEDICAL_KNOWLEDGE = {
-  "chest pain": { specialist: "Cardiologist", advice: "Please sit down and rest. If the pain radiates to your arm or jaw, use the SOS button immediately." },
-  "headache": { specialist: "Neurologist", advice: "Rest in a quiet, dark room. Stay hydrated. If it's the 'worst headache of your life', seek emergency care." },
-  "stomach": { specialist: "Gastroenterologist", advice: "Avoid solid food for a few hours. Sip clear fluids. Avoid spicy or oily food." },
-  "back pain": { specialist: "Orthopedic", advice: "Apply a cold pack. Avoid heavy lifting. Try gentle stretching if not too painful." },
-  "fever": { specialist: "General Physician", advice: "Monitor your temperature. Stay hydrated with electrolytes. Get plenty of rest." },
-  "rash": { specialist: "Dermatologist", advice: "Avoid scratching. Keep the area clean and dry. Note if you've used any new products recently." },
-  "vision": { specialist: "Eye Specialist", advice: "Avoid rubbing your eyes. Reduce screen time. If vision loss is sudden, see a doctor immediately." },
-  "tooth": { specialist: "Dentist", advice: "Rinse with warm salt water. Avoid very hot or cold food. See a dentist soon." },
-  "anxiety": { specialist: "Psychiatrist", advice: "Practice deep breathing (4-7-8 technique). I recommend trying our brand new [Zen.Zone](/zen-zone) for an instant mental reset." },
-  "cough": { specialist: "ENT Specialist", advice: "Gargle with warm salt water. Use a humidifier. Stay hydrated." }
-};
+import dotenv from "dotenv";
+import axios from "axios";
+dotenv.config();
 
 export const chatWithAiDoctor = async (req, res) => {
   try {
-    const { message } = req.body;
-    const msg = message.toLowerCase();
+    const { message, messages, userProfile } = req.body;
+    const chatHistory = messages || (message ? [{ role: "user", content: message }] : []);
 
-    let reply = "I understand you're feeling unwell. Let me help you. Can you tell me more about where it hurts or any other symptoms?";
+    if (!chatHistory.length) {
+      return res.status(400).json({ error: "Invalid request." });
+    }
+
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ reply: "API Key Error." });
+    }
+
+    // Construct Profile Context
+    const profileContext = userProfile 
+      ? `USER PROFILE: Age: ${userProfile.age}, Gender: ${userProfile.gender}, Weight: ${userProfile.weight}kg. \n`
+      : "";
+
+    const systemPrompt = {
+      role: "system",
+      content: "You are an AI healthcare assistant. " + profileContext +
+               "\n--- STRICTURES ---\n" +
+               "1. Suggest 1-3 OTC medicines for symptoms.\n" +
+               "2. MEDICINE NAME must be SHORT (1-3 words max). DO NOT include descriptions in the name.\n" +
+               "3. COMPULSORY: GENERATE A WELLNESS PLAN (Diet, Exercise, Yoga) at the end.\n" +
+               "--- FINAL TAG FORMAT (STRICT) ---\n" +
+               "SPECIALTY: <Type>\n" +
+               "MEDICINES: [Medicine Name | Brief Clinical Reason, ...]\n" +
+               "###WELLNESS_PLAN###\n" +
+               "{ \"diet\": [...], \"exercise\": [...], \"yoga\": [...] }"
+    };
+
+    const apiMessages = [systemPrompt, ...chatHistory.map(m => ({ role: m.role, content: m.content }))];
+
+    let response;
+    try {
+      response = await axios.post("https://api.groq.com/openai/v1/chat/completions", {
+        model: "llama-3.1-8b-instant",
+        messages: apiMessages,
+        temperature: 0.1 // Lowered for stricter formatting
+      }, {
+        headers: {
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        timeout: 20000 // 20s timeout to prevent hanging connections
+      });
+    } catch (e) {
+      if (e.response) {
+        console.error("GROQ_ERROR:", e.response.data);
+        throw new Error(`Groq API returned ${e.response.status}`);
+      } else if (e.code === 'ECONNABORTED') {
+        console.error("GROQ_TIMEOUT: Taking too long to respond.");
+        throw new Error("Groq API Timeout");
+      } else {
+        console.error("GROQ_NETWORK_ERROR:", e.message);
+        throw new Error("Network error reaching Groq API");
+      }
+    }
+
+    const replyContent = response.data.choices[0]?.message?.content || "";
+
     let suggestion = null;
+    let medicines = [];
+    let wellnessPlan = null;
+    let cleanReply = replyContent;
 
-    // Direct Mapping Logic
-    for (const [key, data] of Object.entries(MEDICAL_KNOWLEDGE)) {
-      if (msg.includes(key)) {
-        reply = `It sounds like you're experiencing ${key}. ${data.advice} I recommend consulting a specialist for a proper diagnosis.`;
-        suggestion = data.specialist;
-        break;
+    // 1. Wellness Plan Parsing
+    const planRegex = /###WELLNESS_PLAN###\s*({[\s\S]*})/i;
+    const planMatch = cleanReply.match(planRegex);
+    if (planMatch) {
+      try {
+        wellnessPlan = JSON.parse(planMatch[1]);
+        cleanReply = cleanReply.replace(planMatch[0], "").trim();
+      } catch (e) {}
+    }
+
+    // 2. Specialty & Tag Extraction (Greedy Fallbacks)
+    const specialtyMatch = cleanReply.match(/(?:SPECIALTY:\s*|\()([A-Za-z\s\/]+)(?:\)|(?:\s*MEDICINES:))/i);
+    if (specialtyMatch) {
+      suggestion = specialtyMatch[1].trim();
+      cleanReply = cleanReply.replace(specialtyMatch[0], "").trim();
+    }
+
+    // 3. Medicine Parsing (Greedy "Hunt" for [Name | Reason] patterns)
+    // Matches patterns like [Med | Reason], (Med | Reason), or even just med | reason
+    const medPattern = /\[?([A-Za-z\s\d\-]+)\s*\|\s*([^\]\)]+)\]?/g;
+    let match;
+    while ((match = medPattern.exec(replyContent)) !== null) {
+      let name = match[1].replace(/[*#\[\]\(\)]/g, "").replace(/^\d+[\.\)]\s*/, "").trim();
+      let desc = match[2].replace(/[*#\[\]\(\)]/g, "").trim();
+
+      // Final validation: Ensure it's not a generic instruction
+      if (name.length > 2 && name.toLowerCase() !== "medicine name") {
+        medicines.push({ name, description: desc });
+        // Remove the matched text from cleanReply so it doesn't show in the chat
+        cleanReply = cleanReply.replace(match[0], "").trim();
       }
     }
 
-    // Contextual Guidance if no direct match
-    if (!suggestion) {
-      if (msg.includes("medicine") || msg.includes("drug")) {
-        reply = "I cannot prescribe specific medications without a physical examination. However, I can suggest a General Physician who can help you after a check-up.";
-        suggestion = "General Physician";
-      } else if (msg.includes("help") || msg.includes("doctor")) {
-        reply = "I can definitely help you find the right doctor. What are your symptoms? I can filter our map specifically for you.";
-      }
-    }
+    // Comprehensive Post-Clean
+    cleanReply = cleanReply
+      .replace(/SPECIALTY:.*$/gim, "")
+      .replace(/MEDICINES:.*$/gim, "")
+      .replace(/\[\s*\|\s*.*\]/g, "")
+      .replace(/\s*\(.*\)\s*/g, (match) => (match.includes("Plan") || match.includes("|") ? "" : match))
+      .trim();
+
+    cleanReply = cleanReply.split("SPECIALTY:")[0].split("MEDICINES:")[0].split("###")[0].trim();
 
     return res.status(200).json({ 
-      reply,
-      suggestion,
-      disclaimer: "Disclaimer: Medi.Assist AI is for guidance only and not a substitute for professional medical advice."
+      reply: cleanReply,
+      suggestion, 
+      medicines, 
+      wellnessPlan,
+      disclaimer: "AI for informational use only."
     });
 
   } catch (error) {
     console.error("AI Doctor Error:", error);
-    return res.status(500).json({ error: "Internal Medical Brain Error" });
+    return res.status(500).json({ reply: "I encountered a technical issue. Please try again." });
   }
 };

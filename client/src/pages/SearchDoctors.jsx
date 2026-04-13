@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from "react-leaflet";
+import { Crosshair, AlertCircle } from "lucide-react";
+import { useLiveLocation } from "../hooks/useLiveLocation";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Component to dynamically set map bounds based on doctors
-function MapBounds({ doctors }) {
+// Component to dynamically set map bounds based on doctors or live position
+function MapBounds({ doctors, livePos, followUser }) {
   const map = useMap();
   useEffect(() => {
+    if (followUser && livePos) {
+      map.flyTo(livePos, map.getZoom() < 14 ? 14 : map.getZoom(), { animate: true });
+      return;
+    }
+
     const validDoctors = doctors.filter(doc => doc.lat || doc.center?.lat);
     if (validDoctors.length > 0) {
       const bounds = L.latLngBounds(validDoctors.map(doc => [
@@ -17,7 +24,7 @@ function MapBounds({ doctors }) {
       ]));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [doctors, map]);
+  }, [doctors, livePos, followUser, map]);
   return null;
 }
 
@@ -30,7 +37,11 @@ export default function SearchDoctors() {
   const [query, setQuery] = useState(initialSpeciality);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [followUser, setFollowUser] = useState(false);
 
+  const { location: livePos, error: liveError } = useLiveLocation();
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "API_KEY";
 
   const searchDoctors = async () => {
@@ -41,7 +52,7 @@ export default function SearchDoctors() {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/map/clinics?city=${city}&speciality=${query}`
+        `${API_URL}/api/map/clinics?city=${city}&speciality=${query}`
       );
       setDoctors(res.data);
     } catch (error) {
@@ -51,13 +62,31 @@ export default function SearchDoctors() {
     }
   };
 
-  const customIcon = L.icon({
-    iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
+  const doctorPinHtml = `
+    <div style="position: relative; width: 24px; height: 32px; display: flex; justify-content: center;">
+      <div style="width: 24px; height: 24px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 2;">
+        <div style="width: 18px; height: 18px; background-color: #06b6d4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; font-family: sans-serif;">D</div>
+      </div>
+      <div style="position: absolute; bottom: 2px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid white; z-index: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));"></div>
+    </div>
+  `;
+
+  const customIcon = L.divIcon({
+    className: 'empty-class',
+    html: doctorPinHtml,
+    iconSize: [24, 32],
+    iconAnchor: [12, 32],
+    popupAnchor: [0, -32]
+  });
+
+  const userLocationIcon = L.divIcon({
+    className: 'empty-class',
+    html: `<div class="relative flex items-center justify-center">
+             <div class="absolute w-8 h-8 bg-blue-500/30 rounded-full animate-user-pulse"></div>
+             <div class="relative w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>
+           </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
   });
 
   return (
@@ -181,12 +210,57 @@ export default function SearchDoctors() {
             className="h-full w-full"
             zoomControl={false}
           >
-            <TileLayer 
-              url={`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`}
-              attribution='&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-            />
+            <LayersControl position="topright">
+              <LayersControl.BaseLayer checked name="Roadmap">
+                <TileLayer 
+                  url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                  subdomains={['mt0','mt1','mt2','mt3']}
+                  attribution="&copy; Google Maps"
+                />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Satellite">
+                <TileLayer 
+                  url="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+                  subdomains={['mt0','mt1','mt2','mt3']}
+                  attribution="&copy; Google Maps"
+                />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Hybrid">
+                <TileLayer 
+                  url="https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                  subdomains={['mt0','mt1','mt2','mt3']}
+                  attribution="&copy; Google Maps"
+                />
+              </LayersControl.BaseLayer>
+            </LayersControl>
             
-            {doctors.length > 0 && <MapBounds doctors={doctors} />}
+            {liveError && (
+              <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm border border-amber-200 p-2 rounded-lg shadow-lg flex items-center gap-2 text-amber-600 text-[10px] font-bold uppercase transition-all animate-in fade-in slide-in-from-bottom-2">
+                <AlertCircle size={14} /> {liveError}
+              </div>
+            )}
+
+            <button 
+              onClick={() => setFollowUser(!followUser)}
+              className={`absolute top-20 right-2 z-[1000] w-10 h-10 rounded-lg shadow-lg flex items-center justify-center transition-all bg-white border ${
+                followUser ? "text-cyan-600 border-cyan-500" : "text-gray-400 border-gray-200 hover:text-gray-600"
+              }`}
+              title={followUser ? "Stop Following" : "Follow Me"}
+            >
+              <Crosshair size={20} className={followUser ? "animate-spin-slow" : ""} />
+            </button>
+
+            {livePos && (
+              <Marker position={livePos} icon={userLocationIcon}>
+                <Popup className="rounded-xl">
+                  <div className="text-center p-1">
+                    <p className="font-bold text-gray-900 text-xs">You are here</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+            
+            <MapBounds doctors={doctors} livePos={livePos} followUser={followUser} />
 
             {doctors.map((doc, i) => {
                const lat = doc.lat || doc.center?.lat;

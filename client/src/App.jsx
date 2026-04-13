@@ -6,6 +6,9 @@ import LabTests from "./pages/LabTests";
 import Appointment from "./pages/Appointment";
 import AiDoctor from "./pages/AiDoctor";
 import ZenZone from "./pages/ZenZone";
+import CaretakerLounge from "./pages/CaretakerLounge";
+
+
 
 export default function App() {
   return (
@@ -19,6 +22,9 @@ export default function App() {
           <Route path="/appointment/:id" element={<Appointment />} />
           <Route path="/ai-doctor" element={<AiDoctor />} />
           <Route path="/zen-zone" element={<ZenZone />} />
+          <Route path="/companion-lounge" element={<CaretakerLounge />} />
+
+
         </Routes>
       </div>
     </div>

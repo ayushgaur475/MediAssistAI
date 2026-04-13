@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sun, Moon, AlertTriangle, Wind } from "lucide-react";
+import { Sun, Moon, AlertTriangle, Wind, Heart } from "lucide-react";
 
 export default function Navbar() {
   const location = useLocation();
@@ -21,8 +21,8 @@ export default function Navbar() {
   }, [isDark]);
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-[1000] px-6 py-4">
-      <div className="max-w-7xl mx-auto glass p-4 px-8 rounded-2xl flex justify-between items-center border border-white/10 shadow-2xl">
+    <nav className="fixed top-0 left-0 w-full z-[1000]">
+      <div className="w-full glass p-4 px-8 flex justify-between items-center border-b border-white/10 shadow-sm backdrop-blur-md">
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-2 group">
           <motion.div 
@@ -69,6 +69,15 @@ export default function Navbar() {
             <span className="hidden xs:inline">Zen Zone</span>
           </Link>
 
+          {/* COMPANION LOUNGE */}
+          <Link 
+            to="/companion-lounge"
+            className="flex items-center gap-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-purple-500/20 transition-all group"
+          >
+            <Heart size={16} className="group-hover:scale-110 transition-transform" />
+            <span className="hidden xs:inline">Companion Lounge</span>
+          </Link>
+
           {/* EMERGENCY SOS */}
           <Link 
             to="/map?mode=emergency"
@@ -108,12 +117,7 @@ export default function Navbar() {
             </AnimatePresence>
           </button>
 
-          <Link 
-            to="/map" 
-            className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-cyan-400 to-purple-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
-          >
-            Get Started
-          </Link>
+
         </div>
       </div>
     </nav>
