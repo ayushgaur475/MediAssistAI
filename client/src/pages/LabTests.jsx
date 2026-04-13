@@ -316,20 +316,7 @@ export default function LabTests() {
               ))}
             </MapContainer>
             
-            {/* Map Overlay Stats */}
-            {labs.length > 0 && (
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 glass px-8 py-3 rounded-2xl flex items-center gap-6 border border-white/10 z-[1000] shadow-2xl animate-floating pointer-events-none">
-                <div className="text-center">
-                   <p className="text-lg font-black text-purple-400">{labs.length}</p>
-                   <p className="text-[8px] text-[var(--text-muted)] uppercase font-black">Labs Found</p>
-                </div>
-                <div className="w-[1px] h-8 bg-white/5" />
-                <div className="text-center">
-                   <p className="text-lg font-black text-cyan-400">24h</p>
-                   <p className="text-[8px] text-[var(--text-muted)] uppercase font-black">Reporting</p>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
 
