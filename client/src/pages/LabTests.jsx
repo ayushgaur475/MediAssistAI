@@ -229,7 +229,7 @@ export default function LabTests() {
   });
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
       
       {/* ─── TOP SEARCH BAR ─── */}
       <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
@@ -267,10 +267,10 @@ export default function LabTests() {
       </div>
 
       {/* ─── BODY: Map Left + Results Right ─── */}
-      <div className="flex flex-col md:flex-row flex-1 w-full overflow-hidden pt-16 md:pt-0">
+      <div className="flex flex-col md:flex-row flex-1 w-full overflow-hidden">
         
         {/* Map Container (Static Left) */}
-        <div className="w-full md:w-[50%] lg:w-[55%] h-[40vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col relative md:sticky top-0 z-10">
+        <div className="w-full md:w-[60%] lg:w-[65%] h-[35vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col relative md:sticky top-0 z-10">
           <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.1)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={cityPos} zoom={13} className="h-full w-full" zoomControl={false}>
               <LayersControl position="topright">
@@ -341,7 +341,7 @@ export default function LabTests() {
         </div>
 
         {/* Results List View (Scrollable Right) */}
-        <div className="w-full md:w-[50%] lg:w-[45%] h-full overflow-y-auto bg-[var(--bg-main)] p-4 sm:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
+        <div className="w-full md:w-[40%] lg:w-[35%] h-full overflow-y-auto bg-[var(--bg-main)] p-2 sm:p-4 md:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
           {filteredLabs.length > 0 ? (
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
@@ -351,38 +351,72 @@ export default function LabTests() {
               {filteredLabs.map((lab, idx) => {
                 const refPos = livePos || cityPos;
                 const dist = refPos ? calculateDistance(refPos[0], refPos[1], lab.lat, lab.lon) : null;
+                
+                // Lab Address Parsing
+                const parseLabAddress = (addrStr) => {
+                  if (!addrStr) return { street: "N/A", city: "N/A", state: "N/A", pincode: "N/A" };
+                  const parts = addrStr.split(',').map(p => p.trim());
+                  const pinRegex = /\b\d{6}\b/;
+                  const pinMatch = addrStr.match(pinRegex);
+                  const pincode = pinMatch ? pinMatch[0] : "N/A";
+                  const states = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
+                  const state = states.find(s => addrStr.toLowerCase().includes(s.toLowerCase())) || "N/A";
+                  let city = parts[parts.length - 3] || parts[parts.length - 2] || "N/A";
+                  return { street: parts[0] || "N/A", city, state, pincode };
+                };
+
+                const addr = parseLabAddress(lab.address);
+
                 return (
                   <motion.div
                     key={lab.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(idx * 0.05, 0.5) }}
-                    className={`w-full p-5 rounded-2xl border transition-all cursor-pointer glass-card flex flex-col group ${hoveredId === lab.id ? 'border-purple-500 bg-white/5 transform -translate-y-1 shadow-xl' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'}`}
+                    className={`p-6 rounded-3xl border transition-all cursor-pointer bg-[#0f0f12] flex flex-col gap-4
+                      ${hoveredId === lab.id ? 'border-[#22d3ee]/50 shadow-[0_0_30px_rgba(34,211,238,0.15)] bg-[#16161a]' : 'border-white/5 shadow-xl'}
+                    `}
                     onMouseEnter={() => setHoveredId(lab.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="flex gap-3 items-start w-[80%]">
-                        <div className="w-8 h-8 rounded-full bg-[var(--bg-main)] border border-[var(--border-subtle)] flex items-center justify-center font-black text-xs text-[var(--text-main)] shrink-0 shadow-sm mt-0.5">
-                          {idx + 1}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight mb-1">{lab.name}</h3>
-                          <p className="text-[var(--text-muted)] text-[11px] line-clamp-2 leading-relaxed font-medium">{lab.address}</p>
-                        </div>
+                    {/* Title */}
+                    <div className="flex flex-col gap-2">
+                       <h3 className="font-black text-[#22d3ee] text-lg leading-tight tracking-tight">
+                         {idx + 1}. {lab.name}
+                       </h3>
+                       <div className="flex items-center gap-3">
+                         <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 flex items-center gap-2">
+                            <span className="text-white font-bold text-xs">{dist ? dist.toFixed(1) : "?.?"} km</span>
+                            <span className="text-white/40 text-xs">•</span>
+                            <span className="text-white font-bold text-xs">{dist ? Math.round(dist * 1.8) : "??"} min</span>
+                         </div>
+                         <span className="text-white/60 font-medium text-[10px] tracking-widest uppercase">{lab.type || "Pathology"}</span>
+                       </div>
+                    </div>
+
+                    {/* Address Stack */}
+                    <div className="flex flex-col gap-2.5 mt-2">
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-white font-black whitespace-nowrap">Address:</span>
+                        <span className="text-white/70 font-medium">{addr.street}</span>
                       </div>
-                      <span className="bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/20 shrink-0 hidden sm:block">Certified</span>
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-white font-black whitespace-nowrap">City:</span>
+                        <span className="text-white/70 font-medium">{addr.city}</span>
+                      </div>
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-white font-black whitespace-nowrap">State:</span>
+                        <span className="text-white/70 font-medium">{addr.state}</span>
+                      </div>
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-white font-black whitespace-nowrap">Pincode:</span>
+                        <span className="text-white/70 font-medium">{addr.pincode}</span>
+                      </div>
                     </div>
-                    
-                    <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
-                      <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                         <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
-                         {dist ? `${dist} km away` : lab.type}
-                      </span>
-                      <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-[9px] uppercase tracking-widest shadow-md hover:scale-105 transition-all">
-                        Directions
-                      </button>
-                    </div>
+
+                    <button className="mt-4 w-full py-4 rounded-2xl border-2 border-[#22d3ee] text-[#22d3ee] font-black text-lg hover:bg-[#22d3ee] hover:text-white transition-all active:scale-[0.98] shadow-lg shadow-[#22d3ee]/10">
+                      Navigate
+                    </button>
                   </motion.div>
                 );
               })}

@@ -18,93 +18,97 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
   const distance = userPos 
     ? calculateDistance(userPos[0], userPos[1], place.lat, place.lon)
     : null;
+
+  // Address Parsing Logic
+  const parseAddress = (addrStr) => {
+    if (!addrStr) return { street: "N/A", city: "N/A", state: "N/A", pincode: "N/A" };
     
+    const parts = addrStr.split(',').map(p => p.trim());
+    const pinRegex = /\b\d{6}\b/;
+    let pincode = "N/A";
+    let state = "N/A";
+    let city = place.district || "N/A";
+    
+    // Find Pincode
+    const pinMatch = addrStr.match(pinRegex);
+    if (pinMatch) pincode = pinMatch[0];
+
+    // Common Indian States
+    const states = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
+    
+    state = states.find(s => addrStr.toLowerCase().includes(s.toLowerCase())) || "N/A";
+
+    // If city is N/A but we have parts, try to guess city
+    if (city === "N/A" && parts.length > 1) {
+       // Usually city is one of the last few parts before pincode or country
+       city = parts[parts.length - 3] || parts[parts.length - 2] || "N/A";
+    }
+
+    const street = parts[0] || "N/A";
+
+    return { street, city, state, pincode };
+  };
+
+  const addrInfo = parseAddress(place.address || place.display_name);
   const rating = (4 + Math.random()).toFixed(1);
 
   return (
     <div 
-      className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-sm glass-card h-full flex flex-col
-        ${isHovered ? 'border-cyan-500 shadow-xl transform -translate-y-1 bg-white/20' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'}
+      className={`p-4 md:p-6 rounded-3xl border transition-all cursor-pointer bg-[#0f0f12] group flex flex-col gap-4
+        ${isHovered ? 'border-[#22d3ee]/50 shadow-[0_0_30px_rgba(34,211,238,0.15)] bg-[#16161a]' : 'border-white/5 shadow-xl'}
       `}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
       onClick={onClick}
     >
-      <div className="flex justify-between items-start gap-3">
-        <div className="w-[80%] flex items-start gap-3">
-          {index !== undefined && (
-            <div className="w-8 h-8 rounded-full bg-[var(--bg-main)] border border-[var(--border-subtle)] flex items-center justify-center font-black text-xs text-[var(--text-main)] shrink-0 shadow-sm mt-0.5">
-              {index + 1}
-            </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-               <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight">
-                 {place.hospital_name || place.name || 'Unnamed Location'}
-               </h3>
-               {place.source === 'database' ? (
-                 <span className="bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/20">Verified</span>
-               ) : (
-                 <span className="bg-gray-500/10 text-gray-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-white/5">External</span>
-               )}
-            </div>
-            {(place.speciality || place.type) && (
-              <p className="text-[10px] font-black text-neon uppercase tracking-[0.2em]">{place.speciality || place.type}</p>
-            )}
-          </div>
-        </div>
-        <span className="bg-cyan-500/10 text-cyan-400 font-black text-[10px] px-2.5 py-1 rounded-full border border-cyan-500/10 shrink-0">
-          ★ {rating > 5 ? '5.0' : rating}
-        </span>
-      </div>
-
-      <div className="flex-1">
-        <p className="text-[var(--text-muted)] text-[11px] mt-3 line-clamp-2 leading-relaxed font-medium">
-          {place.address || place.display_name || "Region location unavailable"}
-        </p>
+      {/* Title Section */}
+      <div className="flex flex-col gap-2">
+        <h3 className="font-black text-[#22d3ee] text-base md:text-lg lg:text-xl leading-tight tracking-tight">
+          {index !== undefined ? `${index + 1}. ` : ""}{place.hospital_name || place.name || 'Unnamed Hospital'}
+        </h3>
         
-        {place.tags && place.tags.phone && (
-          <p className="text-[var(--text-main)] text-[11px] mt-2 font-medium flex items-center gap-1">
-            📞 {place.tags.phone}
-          </p>
-        )}
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between mt-5 gap-3 border-t border-[var(--border-subtle)] pt-4">
-        <span className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
-          {distance ? `${distance} km away` : "Calculating..."}
-        </span>
-        <div className="flex gap-2 w-full sm:w-auto">
-          {place.tags && place.tags.phone && (
-            <a 
-              href={`tel:${place.tags.phone}`}
-              className="flex-1 sm:flex-none text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-subtle)] hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-sm text-center flex items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              Call
-            </a>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 flex items-center gap-2">
+             <span className="text-white font-bold text-xs">{distance || "?.?"} km</span>
+             <span className="text-white/40 text-xs">•</span>
+             <span className="text-white font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
+          </div>
+          {place.speciality && (
+             <span className="text-white/60 font-medium text-xs tracking-wide uppercase">{place.speciality}</span>
           )}
-          <button 
-            className="flex-1 sm:flex-none text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-md hover:scale-105 active:scale-95"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.handleNavigate) window.handleNavigate(place);
-            }}
-          >
-            Navigate
-          </button>
-          <button 
-            className="flex-1 sm:flex-none text-white bg-gradient-to-r from-cyan-400 to-purple-500 font-black text-[9px] uppercase tracking-widest px-4 py-2.5 rounded-xl transition-all shadow-lg hover:scale-105 active:scale-95"
-            onClick={(e) => {
-              e.stopPropagation();
-              alert("Booking Flow Started!");
-            }}
-          >
-            Book
-          </button>
         </div>
       </div>
+
+      {/* Address Details */}
+      <div className="flex flex-col gap-2.5 mt-2">
+        <div className="flex gap-2 text-sm">
+          <span className="text-white font-black whitespace-nowrap">Address:</span>
+          <span className="text-white/70 font-medium">{addrInfo.street}</span>
+        </div>
+        <div className="flex gap-2 text-sm">
+          <span className="text-white font-black whitespace-nowrap">City:</span>
+          <span className="text-white/70 font-medium">{addrInfo.city}</span>
+        </div>
+        <div className="flex gap-2 text-sm">
+          <span className="text-white font-black whitespace-nowrap">State:</span>
+          <span className="text-white/70 font-medium">{addrInfo.state}</span>
+        </div>
+        <div className="flex gap-2 text-sm">
+          <span className="text-white font-black whitespace-nowrap">Pincode:</span>
+          <span className="text-white/70 font-medium">{addrInfo.pincode}</span>
+        </div>
+      </div>
+
+      {/* Action Button */}
+      <button 
+        className="mt-4 w-full py-3 md:py-4 rounded-2xl border-2 border-[#22d3ee] text-[#22d3ee] font-black text-lg hover:bg-[#22d3ee] hover:text-white transition-all active:scale-[0.98] shadow-lg shadow-[#22d3ee]/10"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (window.handleNavigate) window.handleNavigate(place);
+        }}
+      >
+        Navigate
+      </button>
     </div>
   );
 }

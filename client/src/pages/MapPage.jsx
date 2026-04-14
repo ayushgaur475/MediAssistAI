@@ -568,7 +568,7 @@ export default function MapPage() {
   });
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
 
       {/* ─── TOP SEARCH BAR ─── */}
       <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
@@ -630,11 +630,11 @@ export default function MapPage() {
         )}
       </div>
 
-      {/* ─── BODY: Map top + Results below ─── */}
-      <div className="flex flex-col flex-1 overflow-y-auto w-full hide-scrollbar">
+      {/* ─── BODY: Map Left + Results Right ─── */}
+      <div className="flex flex-col md:flex-row flex-1 w-full overflow-hidden">
 
-        {/* Map */}
-        <div id="map-view" className="w-full h-[60vh] shrink-0 p-3 bg-[var(--bg-main)] flex flex-col">
+        {/* Map Container (Static Left / Top on Mobile) */}
+        <div id="map-view" className="w-full md:w-[60%] lg:w-[65%] h-[35vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col z-10">
           <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(0,210,255,0.08)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={[20.5937, 78.9629]} zoom={5} className="h-full w-full" zoomControl={false}>
               <LayersControl position="topright">
@@ -715,7 +715,7 @@ export default function MapPage() {
         </div>
 
         {/* Results List View (Scrollable Right / Bottom) */}
-        <div className="w-full md:w-[50%] lg:w-[45%] h-full overflow-y-auto bg-[var(--bg-main)] p-4 sm:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
+        <div className="w-full md:w-[40%] lg:w-[35%] h-full overflow-y-auto bg-[var(--bg-main)] p-2 sm:p-4 md:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
           {filteredPlaces.length > 0 ? (
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
