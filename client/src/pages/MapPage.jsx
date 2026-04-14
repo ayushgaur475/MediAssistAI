@@ -550,8 +550,25 @@ export default function MapPage() {
     iconAnchor: [16, 16]
   });
 
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  };
+
+  const filteredPlaces = places.filter(place => {
+    if (!userPos) return true;
+    const dist = calculateDistance(userPos[0], userPos[1], place.lat, place.lon);
+    return dist === null || dist <= 10;
+  });
+
   return (
-    <div className="flex flex-col h-[calc(100vh-96px)] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
 
       {/* ─── TOP SEARCH BAR ─── */}
       <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
@@ -644,7 +661,7 @@ export default function MapPage() {
                 </LayersControl.BaseLayer>
               </LayersControl>
               <MapController 
-                places={places} 
+                places={filteredPlaces} 
                 selectedId={selectedId} 
                 userPos={userPos} 
                 routingTo={routingTo} 
@@ -687,7 +704,7 @@ export default function MapPage() {
                 </Marker>
               )}
               {routeData.length > 0 && <Polyline positions={routeData} color="#3b82f6" weight={6} opacity={0.9} lineJoin="round" lineCap="round" />}
-              {places.filter(place => !selectedId || place.id === selectedId).map(place => {
+              {filteredPlaces.filter(place => !selectedId || place.id === selectedId).map(place => {
                 const lat = parseFloat(place.lat); const lon = parseFloat(place.lon); if (!lat || !lon) return null;
                 return (
                   <Marker key={place.id} position={[lat, lon]} icon={selectedId === place.id ? highlightedIcon : normalIcon} ref={r => { if (r) markerRefs.current[place.id] = r; }} eventHandlers={{ click: () => { setSelectedId(place.id); setRouteData([]); setRoutingTo(null); } }} />
@@ -697,12 +714,16 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Results Grid Layout */}
-        <div className="w-full bg-[var(--bg-main)] p-4 shrink-0 z-10 mt-2">
-          {places.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-              {places.map((place, index) => (
-                <div key={place.id || index} className="w-full">
+        {/* Results List View (Scrollable Right / Bottom) */}
+        <div className="w-full md:w-[50%] lg:w-[45%] h-full overflow-y-auto bg-[var(--bg-main)] p-4 sm:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
+          {filteredPlaces.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-end mb-2">
+                <h3 className="text-lg font-black tracking-tight">{filteredPlaces.length} Results Found</h3>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full border border-[var(--border-subtle)]">Within 10 km</span>
+              </div>
+              {filteredPlaces.map((place, index) => (
+                <div key={place.id || index} className="w-full relative group">
                   <ResultCard 
                     place={place} 
                     index={index} 
@@ -714,17 +735,20 @@ export default function MapPage() {
                       setSelectedId(place.id);
                       setRouteData([]);
                       setRoutingTo(null);
-                      document.getElementById('map-view')?.scrollIntoView({ behavior: 'smooth' });
+                      // Scroll to map strictly on mobile, on desktop map is static sticky
+                      if (window.innerWidth < 768) {
+                         document.getElementById('map-view')?.scrollIntoView({ behavior: 'smooth' });
+                      }
                     }} 
                   />
                 </div>
               ))}
             </div>
           ) : !loading && (
-            <div className="flex flex-col items-center justify-center p-12 opacity-20">
+            <div className="flex flex-col items-center justify-center h-full opacity-20 min-h-[300px]">
               <Activity size={56}/>
               <p className="mt-4 font-black uppercase text-xs tracking-[0.3em]">No Signal</p>
-              <p className="text-[9px] text-center mt-2 tracking-wider">Enter a city above to begin</p>
+              <p className="text-[9px] text-center mt-2 tracking-wider">Search another area to view locations within 10km</p>
             </div>
           )}
         </div>

@@ -208,8 +208,28 @@ export default function LabTests() {
     popupAnchor: [0, -32]
   });
 
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+  };
+
+  const filteredLabs = labs.filter(lab => {
+    // If live pos is not available, we can base it on searched cityPos but 10km is strict.
+    // If user's geo is available, measure from there, else measure from city center.
+    const refPos = livePos || cityPos; 
+    if (!refPos) return true;
+    const dist = calculateDistance(refPos[0], refPos[1], lab.lat, lab.lon);
+    return dist === null || dist <= 10;
+  });
+
   return (
-    <div className="flex flex-col h-[calc(100vh-96px)] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
       
       {/* ─── TOP SEARCH BAR ─── */}
       <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
@@ -246,11 +266,11 @@ export default function LabTests() {
         </div>
       </div>
 
-      {/* ─── BODY: Map top + Results below ─── */}
-      <div className="flex flex-col flex-1 overflow-y-auto w-full hide-scrollbar">
+      {/* ─── BODY: Map Left + Results Right ─── */}
+      <div className="flex flex-col md:flex-row flex-1 w-full overflow-hidden pt-16 md:pt-0">
         
-        {/* Map */}
-        <div className="w-full h-[60vh] shrink-0 p-3 bg-[var(--bg-main)] flex flex-col relative">
+        {/* Map Container (Static Left) */}
+        <div className="w-full md:w-[50%] lg:w-[55%] h-[40vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col relative md:sticky top-0 z-10">
           <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.1)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={cityPos} zoom={13} className="h-full w-full" zoomControl={false}>
               <LayersControl position="topright">
@@ -276,7 +296,7 @@ export default function LabTests() {
                   />
                 </LayersControl.BaseLayer>
               </LayersControl>
-              <MapController labs={labs} cityPos={cityPos} livePos={livePos} followUser={followUser} />
+              <MapController labs={filteredLabs} cityPos={cityPos} livePos={livePos} followUser={followUser} />
               
               <button 
                 onClick={() => setFollowUser(!followUser)}
@@ -304,7 +324,7 @@ export default function LabTests() {
                 </Marker>
               )}
               
-              {labs.map(lab => (
+              {filteredLabs.map(lab => (
                 <Marker key={lab.id} position={[lab.lat, lab.lon]} icon={labIcon}>
                   <Popup>
                     <div className="p-2 bg-[var(--bg-main)] text-[var(--text-main)] font-['Outfit']">
@@ -320,43 +340,58 @@ export default function LabTests() {
           </div>
         </div>
 
-        {/* Results Grid Layout */}
-        <div className="w-full bg-[var(--bg-main)] p-4 shrink-0 z-10 mt-2">
-          {labs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-              {labs.map((lab, idx) => (
-                <motion.div
-                  key={lab.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(idx * 0.05, 0.5) }}
-                  className={`w-full p-5 rounded-2xl border transition-all cursor-pointer glass-card h-full flex flex-col ${hoveredId === lab.id ? 'border-purple-500 bg-white/5 transform -translate-y-1 shadow-xl' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'}`}
-                  onMouseEnter={() => setHoveredId(lab.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                >
-                  <div className="flex justify-between items-start gap-3">
-                    <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight">{lab.name}</h3>
-                    <span className="bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/20 shrink-0">Certified</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[var(--text-muted)] text-[11px] mt-3 line-clamp-2 leading-relaxed font-medium">{lab.address}</p>
-                  </div>
-                  <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
-                    <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                       <Activity size={12} /> {lab.type}
-                    </span>
-                    <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-[9px] uppercase tracking-widest shadow-md hover:scale-105 transition-all">
-                      Directions
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+        {/* Results List View (Scrollable Right) */}
+        <div className="w-full md:w-[50%] lg:w-[45%] h-full overflow-y-auto bg-[var(--bg-main)] p-4 sm:p-6 shrink-0 z-10 custom-scrollbar pb-24 md:pb-8">
+          {filteredLabs.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-end mb-2">
+                <h3 className="text-lg font-black tracking-tight">{filteredLabs.length} Labs Found</h3>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full border border-[var(--border-subtle)]">Within 10 km</span>
+              </div>
+              {filteredLabs.map((lab, idx) => {
+                const refPos = livePos || cityPos;
+                const dist = refPos ? calculateDistance(refPos[0], refPos[1], lab.lat, lab.lon) : null;
+                return (
+                  <motion.div
+                    key={lab.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(idx * 0.05, 0.5) }}
+                    className={`w-full p-5 rounded-2xl border transition-all cursor-pointer glass-card flex flex-col group ${hoveredId === lab.id ? 'border-purple-500 bg-white/5 transform -translate-y-1 shadow-xl' : 'border-[var(--border-subtle)] bg-[var(--bg-card)]'}`}
+                    onMouseEnter={() => setHoveredId(lab.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex gap-3 items-start w-[80%]">
+                        <div className="w-8 h-8 rounded-full bg-[var(--bg-main)] border border-[var(--border-subtle)] flex items-center justify-center font-black text-xs text-[var(--text-main)] shrink-0 shadow-sm mt-0.5">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight mb-1">{lab.name}</h3>
+                          <p className="text-[var(--text-muted)] text-[11px] line-clamp-2 leading-relaxed font-medium">{lab.address}</p>
+                        </div>
+                      </div>
+                      <span className="bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-purple-500/20 shrink-0 hidden sm:block">Certified</span>
+                    </div>
+                    
+                    <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+                      <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" />
+                         {dist ? `${dist} km away` : lab.type}
+                      </span>
+                      <button className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl text-white font-black text-[9px] uppercase tracking-widest shadow-md hover:scale-105 transition-all">
+                        Directions
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : !loading && (
-            <div className="flex flex-col items-center justify-center p-12 opacity-20 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] opacity-20 text-center">
               <FlaskConical size={60}/>
               <p className="mt-4 font-black uppercase text-xs tracking-[0.3em]">No Signal</p>
-              <p className="text-[9px] text-center mt-2 tracking-wider">Enter city to find pathology labs</p>
+              <p className="text-[9px] text-center mt-2 tracking-wider">Search another area to find labs within 10km</p>
             </div>
           )}
         </div>

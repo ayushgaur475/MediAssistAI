@@ -31,20 +31,27 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-3">
-        <div className="w-[80%]">
-          <div className="flex items-center gap-2 mb-1">
-             <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight">
-               {place.hospital_name || 'Unnamed Hospital'}
-             </h3>
-             {place.source === 'database' ? (
-               <span className="bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/20">Verified</span>
-             ) : (
-               <span className="bg-gray-500/10 text-gray-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-white/5">External</span>
-             )}
-          </div>
-          {place.speciality && (
-            <p className="text-[10px] font-black text-neon uppercase tracking-[0.2em]">{place.speciality}</p>
+        <div className="w-[80%] flex items-start gap-3">
+          {index !== undefined && (
+            <div className="w-8 h-8 rounded-full bg-[var(--bg-main)] border border-[var(--border-subtle)] flex items-center justify-center font-black text-xs text-[var(--text-main)] shrink-0 shadow-sm mt-0.5">
+              {index + 1}
+            </div>
           )}
+          <div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+               <h3 className="font-bold text-[var(--text-main)] text-sm leading-tight tracking-tight">
+                 {place.hospital_name || place.name || 'Unnamed Location'}
+               </h3>
+               {place.source === 'database' ? (
+                 <span className="bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-cyan-500/20">Verified</span>
+               ) : (
+                 <span className="bg-gray-500/10 text-gray-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-white/5">External</span>
+               )}
+            </div>
+            {(place.speciality || place.type) && (
+              <p className="text-[10px] font-black text-neon uppercase tracking-[0.2em]">{place.speciality || place.type}</p>
+            )}
+          </div>
         </div>
         <span className="bg-cyan-500/10 text-cyan-400 font-black text-[10px] px-2.5 py-1 rounded-full border border-cyan-500/10 shrink-0">
           ★ {rating > 5 ? '5.0' : rating}
