@@ -81,6 +81,7 @@ export default function SearchBar({
     if (e.key === "Enter") handleSearch();
   };
 
+  return (
     <div className="w-full">
       {/* SearchBar Container */}
       <div className="flex flex-col md:flex-row gap-2.5 md:gap-3 w-full items-stretch md:items-center">
