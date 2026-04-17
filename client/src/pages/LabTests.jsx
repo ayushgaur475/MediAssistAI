@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -70,6 +70,7 @@ export default function LabTests() {
   const [cityPos, setCityPos] = useState([20.5937, 78.9629]); // Default India Center
   const [hoveredId, setHoveredId] = useState(null);
   const [followUser, setFollowUser] = useState(false);
+  const searchingRef = useRef(false);
 
   const { location: livePos, error: liveError } = useLiveLocation();
 
@@ -77,7 +78,9 @@ export default function LabTests() {
 
   const searchLabs = useCallback(async (cityOverride) => {
     const targetCity = cityOverride || city;
-    if (!targetCity.trim()) return;
+    if (!targetCity.trim() || searchingRef.current) return;
+    
+    searchingRef.current = true;
     setLoading(true);
     setLabs([]);
 
@@ -116,37 +119,26 @@ export default function LabTests() {
       ];
 
       let labData = null;
-      let lastError = null;
-
-      // --- Stage 1: Try Overpass Mirrors ---
-      for (const mirror of mirrors) {
-        try {
+      
+      // --- Stage 1: Parallel Mirror Racing (Turbo Search) ---
+      console.log("Turbo Search: Racing Overpass Mirrors...");
+      try {
+        labData = await Promise.any(mirrors.map(async (mirror) => {
           const res = await fetch(mirror, {
             method: "POST",
             body: overpassQuery,
-            signal: AbortSignal.timeout(6000) // 6s timeout per mirror
+            signal: AbortSignal.timeout(5000) // 5s timeout per mirror
           });
           
-          if (res.status === 403 || res.status === 429) {
-             console.warn(`Mirror ${mirror} restricted: ${res.status}`);
-             continue; 
-          }
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!data || !data.elements || data.elements.length === 0) throw new Error("Empty results");
           
-          const text = await res.text();
-          try {
-            const parsed = JSON.parse(text);
-            if (parsed && parsed.elements && parsed.elements.length > 0) {
-              labData = parsed;
-              break; 
-            }
-          } catch (e) {
-            throw new Error("Invalid JSON");
-          }
-        } catch (err) {
-          console.warn(`Mirror ${mirror} failed:`, err.message);
-          lastError = err;
-        }
+          console.log(`Turbo Search: Mirror ${mirror} won!`);
+          return data;
+        }));
+      } catch (err) {
+        console.warn("All Overpass mirrors failed or timed out. Falling back...");
       }
 
       // --- Stage 2: Nominatim Fallback (If Overpass Fails) ---
@@ -207,16 +199,17 @@ export default function LabTests() {
       if (!cityOverride) alert(err.message || "Error finding labs. High traffic on OpenStreetMap servers.");
     } finally {
       setLoading(false);
+      searchingRef.current = false;
     }
   }, [city]);
 
   useEffect(() => {
     const cityParam = searchParams.get("city");
-    if (cityParam) {
+    if (cityParam && cityParam !== city && !searchingRef.current) {
       setCity(cityParam);
       searchLabs(cityParam);
     }
-  }, [searchParams, searchLabs]);
+  }, [searchParams]); // Stable dependency
 
   const labPinHtml = `
     <div style="position: relative; width: 24px; height: 32px; display: flex; justify-content: center;">

@@ -149,6 +149,7 @@ export default function MapPage() {
   const { location: livePos, error: liveError, isTracking } = useLiveLocation();
 
   const [allDistricts, setAllDistricts] = useState([]);
+  const searchingRef = useRef(false);
   const [suggestions, setSuggestions] = useState([]);
   const [allSpecialities, setAllSpecialities] = useState([]);
   const [specSuggestions, setSpecSuggestions] = useState([]);
@@ -217,7 +218,6 @@ export default function MapPage() {
     try {
       const [lat, lon] = pos;
       const query = `[out:json][timeout:25];node["amenity"="hospital"](around:10000,${lat},${lon});out body;`;
-      
       const mirrors = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
@@ -225,34 +225,25 @@ export default function MapPage() {
       ];
 
       let json = null;
-      let lastError = null;
+      
+      // --- Stage 1: Turbo SOS Racing ---
+      if (searchingRef.current) return;
+      searchingRef.current = true;
 
-      // --- Stage 1: Overpass Mirrors ---
-      for (const mirror of mirrors) {
-        try {
+      try {
+        json = await Promise.any(mirrors.map(async (mirror) => {
           const res = await fetch(mirror, {
             method: "POST",
             body: query,
-            signal: AbortSignal.timeout(6000) // 6s timeout per mirror
+            signal: AbortSignal.timeout(5000)
           });
-          
-          if (res.status === 403 || res.status === 429) continue;
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          
-          const text = await res.text();
-          try {
-            const parsed = JSON.parse(text);
-            if (parsed && parsed.elements && parsed.elements.length > 0) {
-              json = parsed;
-              break;
-            }
-          } catch (e) {
-            throw new Error("Invalid JSON");
-          }
-        } catch (err) {
-          console.warn(`SOS Mirror ${mirror} failed:`, err.message);
-          lastError = err;
-        }
+          const data = await res.json();
+          if (!data || !data.elements || data.elements.length === 0) throw new Error("Empty");
+          return data;
+        }));
+      } catch (err) {
+        console.warn("Turbo SOS: All mirrors failed or timed out.");
       }
 
       // --- Stage 2: Nominatim Fallback ---
@@ -280,6 +271,7 @@ export default function MapPage() {
             setFallbackMessage(`✅ SOS: Hospital Found (via Hybrid Search)`);
             setLoading(false);
             setIsEmergencyLoading(false);
+            searchingRef.current = false;
             return;
           }
         } catch (nomErr) {
@@ -305,15 +297,16 @@ export default function MapPage() {
         setSelectedId(nearest.id);
         setRoutingTo(nearest);
         fetchRoute(pos, nearest);
-        setFallbackMessage(`✅ SOS: Neareast Hospital Found`);
+        setFallbackMessage(`✅ SOS: Nearest Hospital Found`);
       } else {
-        setFallbackMessage(lastError ? `⚠️ SOS Error: ${lastError.message}` : "❌ NO HOSPITALS IN 10KM");
+        setFallbackMessage("❌ NO HOSPITALS IN 10KM (Try manual search)");
       }
     } catch (err) {
       setFallbackMessage("⚠️ SOS SEARCH FAILED. Check Connection.");
     } finally {
       setIsEmergencyLoading(false);
       setLoading(false);
+      searchingRef.current = false;
     }
   };
 
@@ -360,9 +353,9 @@ export default function MapPage() {
     }, (err) => setFallbackMessage("Please enable location access."));
   };
 
-  // Fetch hospitals near exact GPS coordinates using Overpass API
-  // Uses exact coordinates so results are always local — same as map GPS button
   const fetchNearbyByCoords = async (lat, lon, spec = "") => {
+    if (searchingRef.current) return;
+    searchingRef.current = true;
     setLoading(true);
     setSelectedId(null);
     setRoutingTo(null);
@@ -372,10 +365,9 @@ export default function MapPage() {
     setIsSearchedCity(false);
     window.hasInitiallyLocated = false;
 
-    const RADIUS_M = 20000; // 20km radius for Overpass
-    const RADIUS_DEG = 0.2; // ~22km bounding box for Nominatim fallback
+    const RADIUS_M = 20000;
+    const RADIUS_DEG = 0.2;
 
-    // Helper: straight-line distance in km (Haversine approximation)
     const distKm = (lat1, lon1, lat2, lon2) => {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -386,10 +378,7 @@ export default function MapPage() {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    // Build Overpass query
     let amenityFilter = "";
-    
-    // Convert common specialities to OSM specific tags
     const specLower = spec.toLowerCase().trim();
     if (specLower === "dentist" || specLower.includes("dental")) {
       amenityFilter = `node["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});way["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});`;
@@ -398,8 +387,6 @@ export default function MapPage() {
     } else if (specLower.includes("clinic") || specLower.includes("doctor")) {
       amenityFilter = `node["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});way["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});`;
     } else if (spec) {
-      // General speciality: search for hospital/clinic AND require the speciality name in the 'name' or 'healthcare:speciality' tag
-      // This is a fuzzy overpass search
       amenityFilter = `
         node["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
         way["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
@@ -407,12 +394,10 @@ export default function MapPage() {
         way["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
       `;
     } else {
-      // No speciality
       amenityFilter = `node["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});way["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});`;
     }
 
     const query = `[out:json][timeout:30];(${amenityFilter});out center body;`;
-
     const mirrors = [
       "https://overpass-api.de/api/interpreter",
       "https://overpass.kumi.systems/api/interpreter",
@@ -420,17 +405,20 @@ export default function MapPage() {
     ];
 
     let json = null;
-    for (const mirror of mirrors) {
-      try {
+    try {
+      json = await Promise.any(mirrors.map(async (mirror) => {
         const res = await fetch(mirror, {
           method: "POST",
           body: query,
-          signal: AbortSignal.timeout(12000)
+          signal: AbortSignal.timeout(5000)
         });
-        if (!res.ok || res.status === 403 || res.status === 429) continue;
-        const parsed = JSON.parse(await res.text());
-        if (parsed?.elements?.length > 0) { json = parsed; break; }
-      } catch { /* try next mirror */ }
+        if (!res.ok) throw new Error("Fail");
+        const data = await res.json();
+        if (!data?.elements?.length) throw new Error("Empty");
+        return data;
+      }));
+    } catch {
+      console.warn("Turbo Search: All mirrors failed.");
     }
 
     if (json?.elements?.length > 0) {
@@ -445,14 +433,12 @@ export default function MapPage() {
           source: 'osm'
         }))
         .filter(h => h.lat && h.lon)
-        // Hard distance filter — drop anything beyond 25km
         .filter(h => distKm(lat, lon, h.lat, h.lon) <= 25)
         .sort((a, b) => distKm(lat, lon, a.lat, a.lon) - distKm(lat, lon, b.lat, b.lon));
 
       setPlaces(mapped);
       setFallbackMessage(`📍 ${mapped.length} hospitals found within 20km of your location`);
     } else {
-      // Nominatim fallback — use strict bounding box (bounded=1) to prevent all-India results
       try {
         const minLat = lat - RADIUS_DEG, maxLat = lat + RADIUS_DEG;
         const minLon = lon - RADIUS_DEG, maxLon = lon + RADIUS_DEG;
