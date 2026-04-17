@@ -8,19 +8,21 @@
   --neon-blue: #00d2ff;
   --neon-purple: #9d50bb;
   --bg-main: #ffffff;
-  --bg-card: rgba(0, 0, 0, 0.05);
-  --text-main: #030712;
-  --text-muted: #4b5563;
-  --border-subtle: rgba(0, 0, 0, 0.1);
+  --bg-card: #f8fafc;
+  --bg-card-hover: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-subtle: #e2e8f0;
   --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-border: rgba(0, 0, 0, 0.05);
 }
 
 .dark {
   --bg-main: #030712;
-  --bg-card: rgba(255, 255, 255, 0.05);
-  --text-main: #ffffff;
-  --text-muted: #9ca3af;
+  --bg-card: #0f172a;
+  --bg-card-hover: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
   --border-subtle: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(0, 0, 0, 0.3);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -46,7 +48,12 @@ body {
     background: var(--bg-card);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
-    @apply hover:border-white/20 transition-all duration-300;
+    @apply transition-all duration-300;
+  }
+  
+  .glass-card:hover {
+    border-color: var(--neon-blue);
+    box-shadow: 0 10px 30px -10px var(--border-subtle);
   }
 
   .text-neon {

@@ -73,18 +73,18 @@ function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollow
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
       {/* Action Pillar */}
-      <div className="flex flex-col bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+      <div className="flex flex-col bg-[var(--bg-card)] backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden border border-[var(--border-subtle)]">
         {/* Zoom Controls */}
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} 
-          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
           title="Zoom In"
         >
           +
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} 
-          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
           title="Zoom Out"
         >
           -
@@ -93,8 +93,8 @@ function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollow
         {/* Locate / Follow */}
         <button 
           onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser) handleLocate(); }} 
-          className={`w-11 h-11 flex items-center justify-center transition-all border-b border-white/5 ${
-            followUser ? "text-cyan-400 bg-cyan-400/10" : "text-gray-400 hover:text-white hover:bg-white/10"
+          className={`w-11 h-11 flex items-center justify-center transition-all border-b border-[var(--border-subtle)] ${
+            followUser ? "text-cyan-500 bg-cyan-500/10" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--text-main)]/5"
           }`}
           title={followUser ? "Stop Tracking" : "Follow Me"}
         >
@@ -104,7 +104,7 @@ function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollow
         {/* Recenter */}
         <button 
           onClick={(e) => { e.stopPropagation(); handleLocate(); }} 
-          className="w-11 h-11 flex items-center justify-center text-cyan-400 hover:bg-white/10 transition-colors border-b border-white/5"
+          className="w-11 h-11 flex items-center justify-center text-cyan-400 hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)]"
           title="Recenter"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
@@ -113,7 +113,7 @@ function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollow
         {/* Reset Map */}
         <button 
           onClick={(e) => { e.stopPropagation(); setRoutingTo(null); window.hasInitiallyLocated = false; }} 
-          className="w-11 h-11 flex items-center justify-center text-purple-400 hover:bg-white/10 transition-colors"
+          className="w-11 h-11 flex items-center justify-center text-purple-400 hover:bg-[var(--text-main)]/5 transition-colors"
           title="Reset Map"
         >
            <svg className="w-5 h-5 rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
@@ -630,7 +630,7 @@ export default function MapPage() {
               </div>
             )}
             {!isEmergencyLoading && fallbackMessage && (
-              <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-2 rounded-xl tracking-widest">
+              <div className="bg-cyan-500/5 text-cyan-500 dark:text-cyan-400 text-[10px] font-black uppercase p-2.5 rounded-xl tracking-widest shadow-sm">
                 {fallbackMessage}
               </div>
             )}
@@ -741,7 +741,7 @@ export default function MapPage() {
           {filteredPlaces.length > 0 ? (
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
-                <h3 className="text-lg font-black tracking-tight">{filteredPlaces.length} Results Found</h3>
+                <h3 className="text-lg font-black tracking-tight text-[var(--text-main)]">{filteredPlaces.length} Results Found</h3>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full">Within 10 km</span>
               </div>
               {filteredPlaces.map((place, index) => (

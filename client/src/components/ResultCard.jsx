@@ -54,8 +54,8 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
 
   return (
     <div 
-      className={`p-4 md:p-6 rounded-3xl border transition-all cursor-pointer bg-[#0f0f12] group flex flex-col gap-4
-        ${isHovered ? 'border-[#22d3ee]/50 shadow-[0_0_30px_rgba(34,211,238,0.15)] bg-[#16161a]' : 'border-white/5 shadow-xl'}
+      className={`p-4 md:p-6 rounded-3xl border transition-all cursor-pointer bg-[var(--bg-card)] group flex flex-col gap-4
+        ${isHovered ? 'border-[#22d3ee]/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] scale-[1.01] bg-[var(--bg-card-hover)]' : 'border-[var(--border-subtle)] shadow-sm'}
       `}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -68,13 +68,13 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
         </h3>
         
         <div className="flex items-center gap-3">
-          <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 flex items-center gap-2">
-             <span className="text-white font-bold text-xs">{distance || "?.?"} km</span>
-             <span className="text-white/40 text-xs">•</span>
-             <span className="text-white font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
+          <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-lg px-3 py-1 flex items-center gap-2">
+             <span className="text-[var(--text-main)] font-bold text-xs">{distance || "?.?"} km</span>
+             <span className="text-[var(--text-muted)] text-xs">•</span>
+             <span className="text-[var(--text-main)] font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
           </div>
           {place.speciality && (
-             <span className="text-white/60 font-medium text-xs tracking-wide uppercase">{place.speciality}</span>
+             <span className="text-[var(--text-muted)] font-bold text-[10px] tracking-widest uppercase">{place.speciality}</span>
           )}
         </div>
       </div>
@@ -82,20 +82,20 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
       {/* Address Details */}
       <div className="flex flex-col gap-2.5 mt-2">
         <div className="flex gap-2 text-sm">
-          <span className="text-white font-black whitespace-nowrap">Address:</span>
-          <span className="text-white/70 font-medium">{addrInfo.street}</span>
+          <span className="text-[var(--text-main)] font-black whitespace-nowrap">Address:</span>
+          <span className="text-[var(--text-muted)] font-medium leading-relaxed">{addrInfo.street}</span>
         </div>
         <div className="flex gap-2 text-sm">
-          <span className="text-white font-black whitespace-nowrap">City:</span>
-          <span className="text-white/70 font-medium">{addrInfo.city}</span>
+          <span className="text-[var(--text-main)] font-black whitespace-nowrap">City:</span>
+          <span className="text-[var(--text-muted)] font-medium">{addrInfo.city}</span>
         </div>
         <div className="flex gap-2 text-sm">
-          <span className="text-white font-black whitespace-nowrap">State:</span>
-          <span className="text-white/70 font-medium">{addrInfo.state}</span>
+          <span className="text-[var(--text-main)] font-black whitespace-nowrap">State:</span>
+          <span className="text-[var(--text-muted)] font-medium">{addrInfo.state}</span>
         </div>
         <div className="flex gap-2 text-sm">
-          <span className="text-white font-black whitespace-nowrap">Pincode:</span>
-          <span className="text-white/70 font-medium">{addrInfo.pincode}</span>
+          <span className="text-[var(--text-main)] font-black whitespace-nowrap">Pincode:</span>
+          <span className="text-[var(--text-muted)] font-medium">{addrInfo.pincode}</span>
         </div>
       </div>
 

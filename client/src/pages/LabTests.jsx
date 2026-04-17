@@ -31,17 +31,17 @@ function MapButtons({ livePos, followUser, setFollowUser }) {
   
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
-      <div className="flex flex-col bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+      <div className="flex flex-col bg-[var(--bg-card)] backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden border border-[var(--border-subtle)]">
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} 
-          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
           title="Zoom In"
         >
           +
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} 
-          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
           title="Zoom Out"
         >
           -
@@ -50,7 +50,7 @@ function MapButtons({ livePos, followUser, setFollowUser }) {
         <button 
           onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser && livePos) map.flyTo(livePos, 15); }} 
           className={`w-11 h-11 flex items-center justify-center transition-all ${
-            followUser ? "text-purple-400 bg-purple-400/10" : "text-gray-400 hover:text-white hover:bg-white/10"
+            followUser ? "text-purple-500 bg-purple-500/10" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--text-main)]/5"
           }`}
           title={followUser ? "Stop Tracking" : "Follow My Location"}
         >
@@ -372,7 +372,7 @@ export default function LabTests() {
           {filteredLabs.length > 0 ? (
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
-                <h3 className="text-lg font-black tracking-tight">{filteredLabs.length} Labs Found</h3>
+                <h3 className="text-lg font-black tracking-tight text-[var(--text-main)]">{filteredLabs.length} Labs Found</h3>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full">Within 10 km</span>
               </div>
               {filteredLabs.map((lab, idx) => {
