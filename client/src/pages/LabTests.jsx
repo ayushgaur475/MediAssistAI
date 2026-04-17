@@ -205,7 +205,9 @@ export default function LabTests() {
 
   useEffect(() => {
     const cityParam = searchParams.get("city");
-    if (cityParam && cityParam !== city && !searchingRef.current) {
+    // Only trigger if cityParam exists AND it's different from current city 
+    // AND we haven't already searched for it in this mount cycle
+    if (cityParam && cityParam !== city && !searchingRef.current && labs.length === 0) {
       setCity(cityParam);
       searchLabs(cityParam);
     }
@@ -250,12 +252,16 @@ export default function LabTests() {
   };
 
   const filteredLabs = labs.filter(lab => {
-    // If live pos is not available, we can base it on searched cityPos but 10km is strict.
-    // If user's geo is available, measure from there, else measure from city center.
-    const refPos = livePos || cityPos; 
+    // CRITICAL FIX: If user searched for a city, filter relative to that city center.
+    // Only use livePos if they are using "My Location" mode.
+    const isMyLocation = city.toLowerCase().includes("my location");
+    const refPos = (isMyLocation && livePos) ? livePos : cityPos; 
+    
     if (!refPos) return true;
     const dist = calculateDistance(refPos[0], refPos[1], lab.lat, lab.lon);
-    return dist === null || dist <= 10;
+    
+    // Increased radius to 15km for better catch-all, but still strict
+    return dist === null || dist <= 15;
   });
 
   return (
