@@ -25,6 +25,42 @@ function MapController({ labs, cityPos, livePos, followUser }) {
   return null;
 }
 
+// Map Control UI Component
+function MapButtons({ livePos, followUser, setFollowUser }) {
+  const map = useMap();
+  
+  return (
+    <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
+      <div className="flex flex-col bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+        <button 
+          onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} 
+          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          title="Zoom In"
+        >
+          +
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} 
+          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          title="Zoom Out"
+        >
+          -
+        </button>
+
+        <button 
+          onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser && livePos) map.flyTo(livePos, 15); }} 
+          className={`w-11 h-11 flex items-center justify-center transition-all ${
+            followUser ? "text-purple-400 bg-purple-400/10" : "text-gray-400 hover:text-white hover:bg-white/10"
+          }`}
+          title={followUser ? "Stop Tracking" : "Follow My Location"}
+        >
+          <Crosshair size={20} className={followUser ? "animate-spin-slow" : ""} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function LabTests() {
   const [searchParams] = useSearchParams();
   const [city, setCity] = useState(searchParams.get("city") || "");
@@ -273,7 +309,7 @@ export default function LabTests() {
         <div className="w-full md:w-[60%] lg:w-[65%] h-[35vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col relative md:sticky top-0 z-10">
           <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.1)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={cityPos} zoom={13} className="h-full w-full" zoomControl={false}>
-              <LayersControl position="topright">
+              <LayersControl position="topleft">
                 <LayersControl.BaseLayer checked name="Roadmap">
                   <TileLayer 
                     url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -297,16 +333,7 @@ export default function LabTests() {
                 </LayersControl.BaseLayer>
               </LayersControl>
               <MapController labs={filteredLabs} cityPos={cityPos} livePos={livePos} followUser={followUser} />
-              
-              <button 
-                onClick={() => setFollowUser(!followUser)}
-                className={`absolute top-20 right-2 z-[1000] w-10 h-10 rounded-lg shadow-lg flex items-center justify-center transition-all bg-white border ${
-                  followUser ? "text-purple-600 border-purple-500" : "text-gray-400 border-gray-200 hover:text-gray-600"
-                }`}
-                title={followUser ? "Stop Following" : "Follow Me"}
-              >
-                <Crosshair size={20} className={followUser ? "animate-spin-slow" : ""} />
-              </button>
+              <MapButtons livePos={livePos} followUser={followUser} setFollowUser={setFollowUser} />
 
               {liveError && (
                 <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm border border-amber-200 p-2 rounded-lg shadow-lg flex items-center gap-2 text-amber-600 text-[10px] font-bold uppercase transition-all animate-in fade-in slide-in-from-bottom-2">

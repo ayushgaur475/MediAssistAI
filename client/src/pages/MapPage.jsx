@@ -71,32 +71,54 @@ function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollow
   }, [userPos, map]);
 
   return (
-    <div className="absolute top-6 right-6 flex flex-col gap-3 z-[1000]">
-      <div className="flex flex-col bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-white/10">
-        <button onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} className="w-12 h-12 flex items-center justify-center text-white hover:bg-white/10 font-light text-2xl border-b border-white/5">+</button>
-        <button onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} className="w-12 h-12 flex items-center justify-center text-white hover:bg-white/10 font-light text-2xl">-</button>
+    <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
+      {/* Action Pillar */}
+      <div className="flex flex-col bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden border border-white/10">
+        {/* Zoom Controls */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} 
+          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          title="Zoom In"
+        >
+          +
+        </button>
+        <button 
+          onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} 
+          className="w-11 h-11 flex items-center justify-center text-white hover:bg-white/10 transition-colors border-b border-white/5 text-xl font-light"
+          title="Zoom Out"
+        >
+          -
+        </button>
+
+        {/* Locate / Follow */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser) handleLocate(); }} 
+          className={`w-11 h-11 flex items-center justify-center transition-all border-b border-white/5 ${
+            followUser ? "text-cyan-400 bg-cyan-400/10" : "text-gray-400 hover:text-white hover:bg-white/10"
+          }`}
+          title={followUser ? "Stop Tracking" : "Follow Me"}
+        >
+          <Crosshair size={20} className={followUser ? "animate-spin-slow" : ""} />
+        </button>
+
+        {/* Recenter */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleLocate(); }} 
+          className="w-11 h-11 flex items-center justify-center text-cyan-400 hover:bg-white/10 transition-colors border-b border-white/5"
+          title="Recenter"
+        >
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+        </button>
+
+        {/* Reset Map */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); setRoutingTo(null); window.hasInitiallyLocated = false; }} 
+          className="w-11 h-11 flex items-center justify-center text-purple-400 hover:bg-white/10 transition-colors"
+          title="Reset Map"
+        >
+           <svg className="w-5 h-5 rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
+        </button>
       </div>
-      
-      <button onClick={(e) => { e.stopPropagation(); handleLocate(); }} className="w-12 h-12 bg-gray-900 text-cyan-400 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-white/10 border border-white/10" title="Find Me">
-        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
-      </button>
-
-      <button onClick={(e) => { e.stopPropagation(); setRoutingTo(null); window.hasInitiallyLocated = false; }} className="w-12 h-12 bg-gray-900 text-purple-400 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-white/10 border border-white/10" title="Reset Map">
-         <svg className="w-6 h-6 rotate-45" fill="currentColor" viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
-      </button>
-
-      {/* Recenter / Follow Me Button */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser) handleLocate(); }} 
-        className={`w-12 h-12 rounded-2xl shadow-2xl flex items-center justify-center transition-all border ${
-          followUser 
-          ? "bg-cyan-500 text-white border-cyan-400 scale-110" 
-          : "bg-gray-900 text-gray-400 border-white/10 hover:bg-white/10"
-        }`} 
-        title={followUser ? "Stop Following" : "Follow My Location"}
-      >
-        <Crosshair size={24} className={followUser ? "animate-spin-slow" : ""} />
-      </button>
     </div>
   );
 }
@@ -637,7 +659,7 @@ export default function MapPage() {
         <div id="map-view" className="w-full md:w-[60%] lg:w-[65%] h-[35vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col z-10">
           <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(0,210,255,0.08)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={[20.5937, 78.9629]} zoom={5} className="h-full w-full" zoomControl={false}>
-              <LayersControl position="topright">
+              <LayersControl position="topleft">
                 <LayersControl.BaseLayer checked name="Roadmap">
                   <TileLayer 
                     url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
