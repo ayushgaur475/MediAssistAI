@@ -346,7 +346,7 @@ export default function LabTests() {
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
                 <h3 className="text-lg font-black tracking-tight">{filteredLabs.length} Labs Found</h3>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full border border-[var(--border-subtle)]">Within 10 km</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full">Within 10 km</span>
               </div>
               {filteredLabs.map((lab, idx) => {
                 const refPos = livePos || cityPos;

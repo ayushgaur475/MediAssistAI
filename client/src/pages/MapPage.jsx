@@ -603,12 +603,12 @@ export default function MapPage() {
         {(fallbackMessage || loading || isEmergencyLoading) && (
           <div className="max-w-7xl mx-auto mt-2">
             {isEmergencyLoading && (
-              <div className="flex items-center gap-2 bg-red-500/10 text-red-400 text-[10px] font-black uppercase p-2 rounded-xl border border-red-500/20 tracking-widest animate-pulse">
+              <div className="flex items-center gap-2 bg-red-500/10 text-red-400 text-[10px] font-black uppercase p-2 rounded-xl tracking-widest animate-pulse">
                 <AlertCircle size={12} /> 🚨 SOS Active — Locating nearest hospital...
               </div>
             )}
             {!isEmergencyLoading && fallbackMessage && (
-              <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-2 rounded-xl border border-cyan-500/20 tracking-widest">
+              <div className="bg-cyan-500/10 text-cyan-400 text-[10px] font-black uppercase p-2 rounded-xl tracking-widest">
                 {fallbackMessage}
               </div>
             )}
@@ -720,7 +720,7 @@ export default function MapPage() {
             <div className="flex flex-col gap-4">
               <div className="flex justify-between items-end mb-2">
                 <h3 className="text-lg font-black tracking-tight">{filteredPlaces.length} Results Found</h3>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full border border-[var(--border-subtle)]">Within 10 km</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full">Within 10 km</span>
               </div>
               {filteredPlaces.map((place, index) => (
                 <div key={place.id || index} className="w-full relative group">
