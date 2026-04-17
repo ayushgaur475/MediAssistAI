@@ -144,7 +144,7 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="Enter City..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-purple-500 transition-all"
+                  className="w-full bg-[var(--bg-main)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-purple-500 transition-all text-[var(--text-main)] placeholder:text-gray-500"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       navigate(`/labs?city=${e.target.value}`);
@@ -165,24 +165,24 @@ export default function Home() {
                 <Zap className="fill-cyan-400" size={24} />
               </div>
               <div>
-                <h4 className="text-xl font-bold text-white">Platform Status</h4>
+                <h4 className="text-xl font-bold text-[var(--text-main)]">Platform Status</h4>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Live System Telemetry</p>
               </div>
             </div>
 
             <div className="flex flex-1 justify-around w-full md:w-auto gap-8">
               <div className="text-center md:text-left">
-                <p className="text-4xl font-black text-white">12k+</p>
+                <p className="text-4xl font-black text-[var(--text-main)]">12k+</p>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Medical Entities</p>
               </div>
               <div className="w-px h-12 bg-[var(--border-subtle)] hidden md:block" />
               <div className="text-center md:text-left">
-                <p className="text-4xl font-black text-white">0.5s</p>
+                <p className="text-4xl font-black text-[var(--text-main)]">0.5s</p>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Query Latency</p>
               </div>
               <div className="w-px h-12 bg-[var(--border-subtle)] hidden md:block" />
               <div className="text-center md:text-left">
-                <p className="text-4xl font-black text-white">99.9%</p>
+                <p className="text-4xl font-black text-[var(--text-main)]">99.9%</p>
                 <p className="text-[10px] text-[var(--text-muted)] uppercase font-black tracking-widest">Uptime Score</p>
               </div>
             </div>
