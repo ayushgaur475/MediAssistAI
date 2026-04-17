@@ -233,7 +233,7 @@ export default function MapPage() {
           const res = await fetch(mirror, {
             method: "POST",
             body: query,
-            signal: AbortSignal.timeout(10000) // 10s for emergency
+            signal: AbortSignal.timeout(6000) // 6s timeout per mirror
           });
           
           if (res.status === 403 || res.status === 429) continue;

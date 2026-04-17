@@ -6,6 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import { Search, MapPin, Activity, FlaskConical, Navigation, Crosshair, AlertCircle } from "lucide-react";
 import { useLiveLocation } from "../hooks/useLiveLocation";
 import { motion, AnimatePresence } from "framer-motion";
+import ResultCard from "../components/ResultCard";
 
 // Handle Map Animations & Bounds
 function MapController({ labs, cityPos, livePos, followUser }) {
@@ -123,7 +124,7 @@ export default function LabTests() {
           const res = await fetch(mirror, {
             method: "POST",
             body: overpassQuery,
-            signal: AbortSignal.timeout(12000) // 12s timeout per mirror
+            signal: AbortSignal.timeout(6000) // 6s timeout per mirror
           });
           
           if (res.status === 403 || res.status === 429) {
@@ -375,78 +376,18 @@ export default function LabTests() {
                 <h3 className="text-lg font-black tracking-tight text-[var(--text-main)]">{filteredLabs.length} Labs Found</h3>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-[var(--bg-card)] py-1 px-3 rounded-full">Within 10 km</span>
               </div>
-              {filteredLabs.map((lab, idx) => {
-                const refPos = livePos || cityPos;
-                const dist = refPos ? calculateDistance(refPos[0], refPos[1], lab.lat, lab.lon) : null;
-                
-                // Lab Address Parsing
-                const parseLabAddress = (addrStr) => {
-                  if (!addrStr) return { street: "N/A", city: "N/A", state: "N/A", pincode: "N/A" };
-                  const parts = addrStr.split(',').map(p => p.trim());
-                  const pinRegex = /\b\d{6}\b/;
-                  const pinMatch = addrStr.match(pinRegex);
-                  const pincode = pinMatch ? pinMatch[0] : "N/A";
-                  const states = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi"];
-                  const state = states.find(s => addrStr.toLowerCase().includes(s.toLowerCase())) || "N/A";
-                  let city = parts[parts.length - 3] || parts[parts.length - 2] || "N/A";
-                  return { street: parts[0] || "N/A", city, state, pincode };
-                };
-
-                const addr = parseLabAddress(lab.address);
-
-                return (
-                  <motion.div
-                    key={lab.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(idx * 0.05, 0.5) }}
-                    className={`p-6 rounded-3xl border transition-all cursor-pointer bg-[#0f0f12] flex flex-col gap-4
-                      ${hoveredId === lab.id ? 'border-[#22d3ee]/50 shadow-[0_0_30px_rgba(34,211,238,0.15)] bg-[#16161a]' : 'border-white/5 shadow-xl'}
-                    `}
-                    onMouseEnter={() => setHoveredId(lab.id)}
-                    onMouseLeave={() => setHoveredId(null)}
-                  >
-                    {/* Title */}
-                    <div className="flex flex-col gap-2">
-                       <h3 className="font-black text-[#22d3ee] text-lg leading-tight tracking-tight">
-                         {idx + 1}. {lab.name}
-                       </h3>
-                       <div className="flex items-center gap-3">
-                         <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 flex items-center gap-2">
-                            <span className="text-white font-bold text-xs">{dist ? dist.toFixed(1) : "?.?"} km</span>
-                            <span className="text-white/40 text-xs">•</span>
-                            <span className="text-white font-bold text-xs">{dist ? Math.round(dist * 1.8) : "??"} min</span>
-                         </div>
-                         <span className="text-white/60 font-medium text-[10px] tracking-widest uppercase">{lab.type || "Pathology"}</span>
-                       </div>
-                    </div>
-
-                    {/* Address Stack */}
-                    <div className="flex flex-col gap-2.5 mt-2">
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-white font-black whitespace-nowrap">Address:</span>
-                        <span className="text-white/70 font-medium">{addr.street}</span>
-                      </div>
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-white font-black whitespace-nowrap">City:</span>
-                        <span className="text-white/70 font-medium">{addr.city}</span>
-                      </div>
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-white font-black whitespace-nowrap">State:</span>
-                        <span className="text-white/70 font-medium">{addr.state}</span>
-                      </div>
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-white font-black whitespace-nowrap">Pincode:</span>
-                        <span className="text-white/70 font-medium">{addr.pincode}</span>
-                      </div>
-                    </div>
-
-                    <button className="mt-4 w-full py-4 rounded-2xl border-2 border-[#22d3ee] text-[#22d3ee] font-black text-lg hover:bg-[#22d3ee] hover:text-white transition-all active:scale-[0.98] shadow-lg shadow-[#22d3ee]/10">
-                      Navigate
-                    </button>
-                  </motion.div>
-                );
-              })}
+              {filteredLabs.map((lab, idx) => (
+                <ResultCard
+                  key={lab.id}
+                  place={lab}
+                  index={idx}
+                  userPos={livePos || cityPos}
+                  isHovered={hoveredId === lab.id}
+                  onHoverStart={() => setHoveredId(lab.id)}
+                  onHoverEnd={() => setHoveredId(null)}
+                  onClick={() => {/* Popup will handle it */}}
+                />
+              ))}
             </div>
           ) : !loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[300px] opacity-20 text-center">

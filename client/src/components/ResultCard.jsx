@@ -19,6 +19,8 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
     ? calculateDistance(userPos[0], userPos[1], place.lat, place.lon)
     : null;
 
+  const displaySpeciality = place.speciality || place.type || place.category;
+
   // Address Parsing Logic
   const parseAddress = (addrStr) => {
     if (!addrStr) return { street: "N/A", city: "N/A", state: "N/A", pincode: "N/A" };
@@ -27,7 +29,7 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
     const pinRegex = /\b\d{6}\b/;
     let pincode = "N/A";
     let state = "N/A";
-    let city = place.district || "N/A";
+    let city = place.district || place.city || "N/A";
     
     // Find Pincode
     const pinMatch = addrStr.match(pinRegex);
@@ -40,7 +42,6 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
 
     // If city is N/A but we have parts, try to guess city
     if (city === "N/A" && parts.length > 1) {
-       // Usually city is one of the last few parts before pincode or country
        city = parts[parts.length - 3] || parts[parts.length - 2] || "N/A";
     }
 
@@ -50,7 +51,6 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
   };
 
   const addrInfo = parseAddress(place.address || place.display_name);
-  const rating = (4 + Math.random()).toFixed(1);
 
   return (
     <div 
@@ -64,7 +64,7 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
       {/* Title Section */}
       <div className="flex flex-col gap-2">
         <h3 className="font-black text-[#22d3ee] text-base md:text-lg lg:text-xl leading-tight tracking-tight">
-          {index !== undefined ? `${index + 1}. ` : ""}{place.hospital_name || place.name || 'Unnamed Hospital'}
+          {index !== undefined ? `${index + 1}. ` : ""}{place.hospital_name || place.name || 'Unnamed Facility'}
         </h3>
         
         <div className="flex items-center gap-3">
@@ -73,8 +73,8 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
              <span className="text-[var(--text-muted)] text-xs">•</span>
              <span className="text-[var(--text-main)] font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
           </div>
-          {place.speciality && (
-             <span className="text-[var(--text-muted)] font-bold text-[10px] tracking-widest uppercase">{place.speciality}</span>
+          {displaySpeciality && (
+             <span className="text-[var(--text-muted)] font-bold text-[10px] tracking-widest uppercase">{displaySpeciality}</span>
           )}
         </div>
       </div>
