@@ -124,47 +124,54 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] p-2 md:p-4 font-['Outfit'] transition-colors duration-300">
-      <div className="max-w-[1400px] mx-auto h-[calc(100vh-40px)] flex flex-col glass-card rounded-[2rem] overflow-hidden shadow-2xl relative border border-gray-200 dark:border-white/10 backdrop-blur-xl bg-white/60 dark:bg-inherit transition-all">
+    <div className="min-h-screen bg-[var(--bg-main)] p-0 md:p-4 font-['Outfit'] transition-colors duration-300 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto h-[calc(100vh-64px)] md:h-[calc(100vh-40px)] flex flex-col glass-card rounded-none md:rounded-[2rem] overflow-hidden shadow-2xl relative border-x-0 md:border border-gray-200 dark:border-white/10 backdrop-blur-xl bg-white/60 dark:bg-inherit transition-all">
         
         {/* Header (unchanged lines skipped for brevity in replace_file_content) */}
-        <div className="p-6 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 flex items-center justify-between transition-colors">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-                <Bot size={28} />
+        <div className="p-4 md:p-6 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-white/5 flex items-center justify-between transition-colors">
+          <div className="flex items-center gap-3 md:gap-4">
+             <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-[12px] md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+                <Bot size={22} className="md:hidden" />
+                <Bot size={28} className="hidden md:block" />
              </div>
              <div>
-                <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Medi.Assist <span className="text-cyan-500 dark:text-cyan-400 font-black">AI</span></h2>
+                <h2 className="text-base md:text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  <span className="hidden xs:inline">Medi.Assist </span>
+                  <span className="text-cyan-500 dark:text-cyan-400 font-black">AI</span>
+                </h2>
                 <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Medical Guidance Mode</span>
+                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse" />
+                   <span className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Medical Guidance Mode</span>
                 </div>
              </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button 
               onClick={() => setShowProfile(!showProfile)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-[10px] font-bold uppercase tracking-wider ${
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg md:rounded-xl transition-all text-[8px] md:text-[10px] font-bold uppercase tracking-wider ${
                 showProfile 
                 ? "bg-cyan-500 text-white shadow-lg" 
-                : "bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                : "bg-gray-100 dark:bg-white/5 text-gray-400 hover:text-white"
               }`}
             >
-              <UserPlus size={14} />
-              {userProfile.age ? "Profile Set" : "Personalize AI"}
+              <UserPlus size={12} className="md:hidden" />
+              <UserPlus size={14} className="hidden md:block" />
+              <span className="hidden sm:inline">{userProfile.age ? "Profile Set" : "Personalize AI"}</span>
             </button>
             <button 
               onClick={() => setMessages([{ role: "assistant", content: "Hello! I am your Medi.Assist AI Doctor. How are you feeling today?" }])}
-              className="p-2 rounded-xl hover:bg-white/10 transition-all text-gray-400 hover:text-white"
+              className="p-1.5 md:p-2 rounded-lg md:rounded-xl hover:bg-white/10 transition-all text-gray-400"
               title="Reset Chat"
             >
-              <RefreshCcw size={18} />
+              <RefreshCcw size={16} className="md:hidden" />
+              <RefreshCcw size={18} className="hidden md:block" />
             </button>
             <button 
               onClick={() => navigate("/")}
-              className="p-2 rounded-xl hover:bg-white/10 transition-all text-gray-400 hover:text-white"
+              className="p-1.5 md:p-2 rounded-lg md:rounded-xl hover:bg-white/10 transition-all text-gray-400"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} className="md:hidden" />
+              <ChevronLeft size={20} className="hidden md:block" />
             </button>
           </div>
         </div>
@@ -204,7 +211,7 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
         {/* Chat Area */}
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent"
+          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 scrollbar-track-transparent"
         >
           {messages.map((msg, i) => (
             <motion.div
@@ -213,13 +220,13 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
               animate={{ opacity: 1, y: 0, scale: 1 }}
               className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div className={`max-w-[85%] flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
+              <div className={`max-w-[90%] md:max-w-[85%] flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 shadow-md ${
                   msg.role === "user" ? "bg-cyan-500 text-white" : "bg-purple-600 text-white"
                 }`}>
-                  {msg.role === "user" ? <User size={20} /> : <Bot size={20} />}
+                  {msg.role === "user" ? <User size={18} /> : <Bot size={18} />}
                 </div>
-                <div className={`flex flex-col gap-3 min-w-[300px] md:min-w-[500px] lg:min-w-[600px] ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`flex flex-col gap-3 min-w-0 md:min-w-[500px] lg:min-w-[600px] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                   <div className={`p-5 rounded-2xl text-sm md:text-base leading-relaxed shadow-sm w-full ${
                     msg.role === "user" 
                     ? "bg-cyan-500/10 border border-cyan-500/30 text-cyan-900 dark:text-white rounded-tr-none" 
@@ -382,14 +389,14 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
         </div>
 
         {/* Action Bar (Suggestions & Disclaimer) */}
-        <div className="px-6 py-2 bg-black/5 dark:bg-black/20 border-t border-gray-200 dark:border-white/5">
+        <div className="px-4 md:px-6 py-2 md:py-3 bg-black/5 dark:bg-black/20 border-t border-gray-200 dark:border-white/5">
            {messages.length === 1 && !loading && (
-             <div className="flex flex-wrap gap-2 mb-3">
+             <div className="flex overflow-x-auto gap-2 mb-3 no-scrollbar pb-1">
                 {QUICK_SUGGESTIONS.map((s, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(s.value)}
-                    className="px-4 py-2 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-cyan-500/20 hover:border-cyan-500/50 hover:text-cyan-500 dark:hover:text-cyan-400 transition-all font-semibold"
+                    className="px-4 py-2 rounded-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-[10px] md:text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap hover:bg-cyan-500/20 hover:border-cyan-500/50 transition-all font-semibold"
                   >
                     {s.label}
                   </button>
@@ -397,20 +404,20 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
              </div>
            )}
            <div className="flex items-center gap-2 opacity-60">
-              <AlertCircle size={12} className="text-red-400" />
-              <p className="text-[10px] font-medium text-red-100 uppercase tracking-tight">
-                Disclaimer: AI provides general info only. Not a medical substitute.
+              <AlertCircle size={10} className="text-red-400 shrink-0" />
+              <p className="text-[9px] md:text-[10px] font-medium text-red-500/80 dark:text-red-300 uppercase tracking-tighter sm:tracking-tight leading-none">
+                AI provides general info only. Not a medical substitute.
               </p>
            </div>
         </div>
 
         {/* Input Area */}
-        <div className="p-6 bg-gray-50/50 dark:bg-white/5 border-t border-gray-200 dark:border-white/5">
-          <div className="relative group">
+        <div className="p-4 md:p-6 bg-gray-50/50 dark:bg-white/5 border-t border-gray-200 dark:border-white/5">
+          <div className="relative group flex items-center gap-2">
             <input 
               type="text" 
-              placeholder="Describe your symptoms... (e.g. Sharp headache since morning)"
-              className="w-full bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-6 py-4 pr-16 text-sm md:text-base outline-none focus:border-cyan-500 dark:focus:border-cyan-400 focus:bg-white/[0.07] transition-all text-gray-900 dark:text-white placeholder:text-gray-500"
+              placeholder="Describe symptoms..."
+              className="flex-1 bg-gray-100/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 md:py-4 text-sm md:text-base outline-none focus:border-cyan-500 transition-all text-gray-900 dark:text-white"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -418,9 +425,10 @@ Disclaimer: This plan is AI-generated for general guidance. Consult a doctor bef
             <button 
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-xl flex items-center justify-center text-white hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-lg"
+              className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-lg md:rounded-xl flex items-center justify-center text-white shrink-0 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all shadow-lg"
             >
-              <Send size={20} />
+              <Send size={18} className="md:hidden" />
+              <Send size={20} className="hidden md:block" />
             </button>
           </div>
         </div>
