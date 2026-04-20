@@ -31,31 +31,28 @@ function MapButtons({ livePos, followUser, setFollowUser }) {
   const map = useMap();
   
   return (
-    <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
-      <div className="flex flex-col bg-[var(--bg-card)] backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden border border-[var(--border-subtle)]">
+    <div className="absolute top-4 right-4 flex flex-col gap-3 z-[1000]">
+      <div className="flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden ring-1 ring-black/5">
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomIn(); }} 
-          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
-          title="Zoom In"
+          className="w-12 h-12 flex items-center justify-center text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90 border-b border-white/10 text-2xl font-light"
         >
           +
         </button>
         <button 
           onClick={(e) => { e.stopPropagation(); map.zoomOut(); }} 
-          className="w-11 h-11 flex items-center justify-center text-[var(--text-main)] hover:bg-[var(--text-main)]/5 transition-colors border-b border-[var(--border-subtle)] text-xl font-light"
-          title="Zoom Out"
+          className="w-12 h-12 flex items-center justify-center text-[var(--text-main)] hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90 border-b border-white/10 text-2xl font-light"
         >
           -
         </button>
 
         <button 
           onClick={(e) => { e.stopPropagation(); setFollowUser(!followUser); if (!followUser && livePos) map.flyTo(livePos, 15); }} 
-          className={`w-11 h-11 flex items-center justify-center transition-all ${
-            followUser ? "text-purple-500 bg-purple-500/10" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--text-main)]/5"
+          className={`w-12 h-12 flex items-center justify-center transition-all active:scale-90 ${
+            followUser ? "text-cyan-400 bg-cyan-400/10" : "text-gray-400 hover:text-cyan-400"
           }`}
-          title={followUser ? "Stop Tracking" : "Follow My Location"}
         >
-          <Crosshair size={20} className={followUser ? "animate-spin-slow" : ""} />
+          <Crosshair size={22} className={followUser ? "animate-spin-slow" : ""} />
         </button>
       </div>
     </div>
@@ -214,11 +211,12 @@ export default function LabTests() {
   }, [searchParams]); // Stable dependency
 
   const labPinHtml = `
-    <div style="position: relative; width: 24px; height: 32px; display: flex; justify-content: center;">
-      <div style="width: 24px; height: 24px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 2;">
-        <div style="width: 18px; height: 18px; background-color: #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; font-family: sans-serif;">L</div>
+    <div style="position: relative; width: 30px; height: 38px; display: flex; justify-content: center;">
+      <div style="width: 30px; height: 30px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 2; border: 2px solid #a855f7;">
+        <div style="width: 22px; height: 22px; background: linear-gradient(135deg, #a855f7, #6366f1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 12px; font-family: Outfit, sans-serif;">L</div>
       </div>
-      <div style="position: absolute; bottom: 2px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid white; z-index: 1; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));"></div>
+      <div style="position: absolute; bottom: 4px; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #a855f7; z-index: 1;"></div>
+      <div style="position: absolute; bottom: 0; width: 14px; height: 4px; background: rgba(0,0,0,0.2); border-radius: 50%; blur: 2px;"></div>
     </div>
   `;
 
@@ -268,34 +266,60 @@ export default function LabTests() {
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-[var(--bg-main)] font-['Outfit'] transition-colors duration-300 text-[var(--text-main)]">
       
       {/* ─── TOP SEARCH BAR ─── */}
-      <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-purple-500/20 rounded-xl flex items-center justify-center text-purple-400">
-              <FlaskConical size={18} />
+      <div className="shrink-0 z-20 px-4 py-4 md:py-6 bg-white/5 dark:bg-black/20 border-b border-white/5 backdrop-blur-xl relative overflow-hidden">
+        {/* Animated Background Accent */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] -z-10 animate-pulse" />
+        
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-8">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-cyan-400 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/30 animate-floating">
+                <FlaskConical size={22} className="md:size-28" />
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-black tracking-tighter flex items-center gap-1">
+                  <span className="text-[var(--text-main)]">Medi.</span>
+                  <span className="text-neon">Labs</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
+                   <span className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] whitespace-nowrap">Diagnostic Hub</span>
+                </div>
+              </div>
             </div>
-            <h2 className="text-base font-black uppercase tracking-tighter hidden md:block">
-              <span className="text-neon">Medi.</span>Labs
-            </h2>
           </div>
           
-          <div className="flex-1 max-w-2xl">
-            <div className="relative group flex items-center">
-               <MapPin className="absolute left-4 text-cyan-400" size={16} />
-               <input 
-                  type="text" 
-                  placeholder="Enter City or Area to find Pathology Labs" 
-                  className="w-full pl-10 pr-24 py-2.5 glass-card bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl text-sm outline-none focus:border-purple-400 text-[var(--text-main)] transition-all font-bold placeholder:text-gray-500"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && searchLabs()}
-               />
+          <div className="w-full max-w-2xl relative group">
+            <div className={`absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-2xl md:rounded-3xl blur-xl opacity-0 transition-opacity duration-500 ${loading ? 'opacity-100' : 'group-hover:opacity-100'}`} />
+            <div className="relative flex items-center gap-2">
+               <div className="flex-1 relative flex items-center">
+                 <MapPin className="absolute left-4 text-cyan-400" size={18} />
+                 <input 
+                    type="text" 
+                    placeholder="Search by City or Area..." 
+                    className="w-full pl-12 pr-4 py-3.5 md:py-4 bg-white/10 dark:bg-black/40 border border-white/10 dark:border-white/5 rounded-2xl md:rounded-[1.5rem] text-sm md:text-base outline-none focus:border-cyan-400/50 text-[var(--text-main)] transition-all font-bold placeholder:text-gray-500 backdrop-blur-md"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && searchLabs()}
+                 />
+               </div>
                <button 
                   onClick={() => searchLabs()} 
                   disabled={loading}
-                  className="absolute right-1 px-4 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-500 to-indigo-600 shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-[10px] disabled:opacity-50 uppercase tracking-widest"
+                  className="px-6 md:px-10 h-[50px] md:h-[60px] rounded-xl md:rounded-2xl font-black text-white bg-gradient-to-r from-purple-500 to-indigo-600 shadow-[0_10px_20px_-5px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-95 transition-all text-xs md:text-sm disabled:opacity-50 uppercase tracking-widest flex items-center justify-center min-w-[100px] md:min-w-[140px]"
                >
-                  {loading ? "Scanning..." : "Search"}
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" />
+                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <span className="text-[10px]">SCANNING</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Search size={16} className="hidden sm:block" />
+                      <span>SEARCH</span>
+                    </div>
+                  )}
                </button>
             </div>
           </div>
@@ -307,7 +331,7 @@ export default function LabTests() {
         
         {/* Map Container (Static Left) */}
         <div className="w-full md:w-[60%] lg:w-[65%] h-[35vh] md:h-full shrink-0 p-2 md:p-3 bg-[var(--bg-main)] flex flex-col relative md:sticky top-0 z-10">
-          <div className="flex-1 relative rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.1)] border-[8px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
+          <div className="flex-1 relative rounded-2xl md:rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] md:border-[12px] border-[var(--bg-card)] ring-1 ring-[var(--border-subtle)]">
             <MapContainer center={cityPos} zoom={13} className="h-full w-full" zoomControl={false}>
               <LayersControl position="topleft">
                 <LayersControl.BaseLayer checked name="Roadmap">

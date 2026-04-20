@@ -24,7 +24,7 @@ export default function Navbar() {
     { name: "Home", path: "/", icon: <HomeIcon size={20} /> },
     { name: "AI Doctor", path: "/ai-doctor", icon: <MessageSquare size={20} /> },
     { name: "Map", path: "/map", icon: <MapPin size={20} /> },
-    { name: "Lab Tests", path: "/lab-tests", icon: <FlaskConical size={20} /> }
+    { name: "Lab Tests", path: "/labs", icon: <FlaskConical size={20} /> }
   ];
 
   return (

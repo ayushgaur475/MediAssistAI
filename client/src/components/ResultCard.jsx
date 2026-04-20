@@ -1,4 +1,5 @@
 import React from 'react';
+import { MapPin, Navigation } from 'lucide-react';
 
 export default function ResultCard({ place, index, userPos, isHovered, onHoverStart, onHoverEnd, onClick }) {
   // Calculate real distance using Haversine formula
@@ -54,60 +55,54 @@ export default function ResultCard({ place, index, userPos, isHovered, onHoverSt
 
   return (
     <div 
-      className={`p-4 md:p-6 rounded-3xl border transition-all cursor-pointer bg-[var(--bg-card)] group flex flex-col gap-4
-        ${isHovered ? 'border-[#22d3ee]/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] scale-[1.01] bg-[var(--bg-card-hover)]' : 'border-[var(--border-subtle)] shadow-sm'}
+      className={`p-5 md:p-7 rounded-[2rem] border transition-all cursor-pointer bg-white/50 dark:bg-white/5 backdrop-blur-md group flex flex-col gap-5
+        ${isHovered ? 'border-cyan-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] scale-[1.02] bg-white dark:bg-white/10' : 'border-gray-200 dark:border-white/5 shadow-sm'}
       `}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
       onClick={onClick}
     >
       {/* Title Section */}
-      <div className="flex flex-col gap-2">
-        <h3 className="font-black text-[#22d3ee] text-base md:text-lg lg:text-xl leading-tight tracking-tight">
+      <div className="flex flex-col gap-3">
+        <h3 className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 text-lg md:text-xl lg:text-2xl leading-tight tracking-tighter">
           {index !== undefined ? `${index + 1}. ` : ""}{place.hospital_name || place.name || 'Unnamed Facility'}
         </h3>
         
         <div className="flex items-center gap-3">
-          <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-lg px-3 py-1 flex items-center gap-2">
-             <span className="text-[var(--text-main)] font-bold text-xs">{distance || "?.?"} km</span>
-             <span className="text-[var(--text-muted)] text-xs">•</span>
-             <span className="text-[var(--text-main)] font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
+          <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-3 py-1.5 flex items-center gap-2 shadow-inner">
+             <span className="text-cyan-600 dark:text-cyan-400 font-black text-xs">{distance || "?.?"} km</span>
+             <div className="w-1 h-1 bg-cyan-400/40 rounded-full" />
+             <span className="text-gray-600 dark:text-gray-300 font-bold text-xs">{distance ? Math.round(distance * 1.5) : "??"} min</span>
           </div>
           {displaySpeciality && (
-             <span className="text-[var(--text-muted)] font-bold text-[10px] tracking-widest uppercase">{displaySpeciality}</span>
+             <span className="text-gray-400 dark:text-gray-500 font-black text-[10px] tracking-[0.2em] uppercase">{displaySpeciality}</span>
           )}
         </div>
       </div>
 
       {/* Address Details */}
-      <div className="flex flex-col gap-2.5 mt-2">
-        <div className="flex gap-2 text-sm">
-          <span className="text-[var(--text-main)] font-black whitespace-nowrap">Address:</span>
-          <span className="text-[var(--text-muted)] font-medium leading-relaxed">{addrInfo.street}</span>
-        </div>
-        <div className="flex gap-2 text-sm">
-          <span className="text-[var(--text-main)] font-black whitespace-nowrap">City:</span>
-          <span className="text-[var(--text-muted)] font-medium">{addrInfo.city}</span>
-        </div>
-        <div className="flex gap-2 text-sm">
-          <span className="text-[var(--text-main)] font-black whitespace-nowrap">State:</span>
-          <span className="text-[var(--text-muted)] font-medium">{addrInfo.state}</span>
-        </div>
-        <div className="flex gap-2 text-sm">
-          <span className="text-[var(--text-main)] font-black whitespace-nowrap">Pincode:</span>
-          <span className="text-[var(--text-muted)] font-medium">{addrInfo.pincode}</span>
+      <div className="flex flex-col gap-3 mt-1 pb-4 border-b border-gray-100 dark:border-white/5">
+        <div className="flex items-start gap-3 text-xs md:text-sm">
+          <MapPin size={16} className="text-purple-500 shrink-0 mt-0.5" />
+          <div className="flex flex-col gap-1">
+            <span className="text-gray-800 dark:text-gray-100 font-bold leading-relaxed">{addrInfo.street}</span>
+            <span className="text-gray-500 dark:text-gray-400 font-medium uppercase tracking-widest text-[9px] md:text-[10px]">
+              {addrInfo.city}, {addrInfo.state} - {addrInfo.pincode}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Action Button */}
       <button 
-        className="mt-4 w-full py-3 md:py-4 rounded-2xl border-2 border-[#22d3ee] text-[#22d3ee] font-black text-lg hover:bg-[#22d3ee] hover:text-white transition-all active:scale-[0.98] shadow-lg shadow-[#22d3ee]/10"
+        className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-black text-sm md:text-base uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-cyan-500/10 flex items-center justify-center gap-2 group/btn"
         onClick={(e) => {
           e.stopPropagation();
           if (window.handleNavigate) window.handleNavigate(place);
         }}
       >
-        Navigate
+        <Navigation size={18} className="group-hover/btn:animate-bounce" />
+        Navigate Now
       </button>
     </div>
   );
