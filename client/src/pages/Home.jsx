@@ -201,8 +201,7 @@ export default function Home() {
 
       {/* --- FOOTER TICKET --- */}
       <footer className="py-10 text-center text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[0.5em]">
-        © 2026 MediAsisstAI Corp
-      </footer>
+        © 2026 MediAsisstAI by Ayush      </footer>
     </div>
   );
 }

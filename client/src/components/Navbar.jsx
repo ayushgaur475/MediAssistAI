@@ -9,6 +9,26 @@ export default function Navbar() {
     return localStorage.getItem("theme") === "dark" || 
            (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
   });
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Hide if scrolling down, show if scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
 
   useEffect(() => {
     if (isDark) {
@@ -107,7 +127,12 @@ export default function Navbar() {
       </nav>
 
       {/* MOBILE BOTTOM NAVIGATION (App-like feel) */}
-      <div className="md:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-card)] border-t border-[var(--border-subtle)] pb-2 pt-2 px-2 flex justify-around items-center z-[1000] pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
+      <motion.div 
+        initial={false}
+        animate={{ y: isVisible ? 0 : 100, opacity: isVisible ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="md:hidden fixed bottom-0 left-0 w-full bg-[var(--bg-card)] border-t border-[var(--border-subtle)] pb-2 pt-2 px-2 flex justify-around items-center z-[1000] pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.1)]"
+      >
         {navLinks.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
@@ -125,7 +150,7 @@ export default function Navbar() {
             </Link>
           )
         })}
-      </div>
+      </motion.div>
     </>
   );
 }

@@ -127,6 +127,28 @@ export const chatWithAiDoctor = async (req, res) => {
 
   } catch (error) {
     console.error("AI Doctor Error:", error);
-    return res.status(500).json({ reply: "I encountered a technical issue. Please try again." });
+    const errorMsg = error.response?.data?.error?.message || error.message || "Unknown Error";
+    const errorStatus = error.response?.status || 500;
+    
+    return res.status(errorStatus).json({ 
+      reply: `I encountered a technical issue: ${errorMsg}`,
+      debug: {
+        status: errorStatus,
+        details: error.response?.data || error.message,
+        keyPresent: !!process.env.GROQ_API_KEY,
+        keyStart: process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0, 7) : "MISSING"
+      }
+    });
   }
+};
+
+export const checkAiStatus = async (req, res) => {
+  const key = process.env.GROQ_API_KEY;
+  res.json({
+    status: "online",
+    keyLoaded: !!key,
+    keyPrefix: key ? key.substring(0, 10) + "..." : "NONE",
+    model: "llama-3.1-8b-instant",
+    timestamp: new Date().toISOString()
+  });
 };

@@ -270,7 +270,7 @@ export default function LabTests() {
         {/* Animated Background Accent */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] -z-10 animate-pulse" />
         
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-8">
+        <div className="w-full mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-8 px-2 md:px-6">
           <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-cyan-400 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/30 animate-floating">
@@ -289,7 +289,7 @@ export default function LabTests() {
             </div>
           </div>
           
-          <div className="w-full max-w-2xl relative group">
+          <div className="w-full relative group">
             <div className={`absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-2xl md:rounded-3xl blur-xl opacity-0 transition-opacity duration-500 ${loading ? 'opacity-100' : 'group-hover:opacity-100'}`} />
             <div className="relative flex items-center gap-2">
                <div className="flex-1 relative flex items-center">
