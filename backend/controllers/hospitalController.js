@@ -175,8 +175,43 @@ export const searchHospitals = async (req, res) => {
       });
     }
 
+
+/**
+ * Overpass Proxy to bypass CORS on Vercel/Production
+ */
+export const overpassProxy = async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query) return res.status(400).json({ error: "No query provided" });
+
+    const mirrors = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter",
+      "https://overpass.osm.ch/api/interpreter",
+      "https://overpass.nchc.org.tw/api/interpreter",
+      "https://lz4.overpass-api.de/api/interpreter"
+    ];
+
+    console.log("[Proxy] Fetching from Overpass mirrors...");
+
+    const labData = await Promise.any(mirrors.map(async (mirror) => {
+      const response = await axios.post(mirror, query, {
+        timeout: 8000,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      if (response.data && response.data.elements) {
+        return response.data;
+      }
+      throw new Error("Empty");
+    }));
+
+    return res.status(200).json(labData);
+
   } catch (error) {
-    console.error("Search API Error:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("[Proxy Error]", error.message);
+    return res.status(500).json({ 
+      error: "All map mirrors are currently busy. Please try again in 5 seconds.",
+      details: error.message 
+    });
   }
 };

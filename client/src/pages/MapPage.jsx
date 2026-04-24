@@ -434,19 +434,19 @@ export default function MapPage() {
 
     let json = null;
     try {
-      json = await Promise.any(mirrors.map(async (mirror) => {
-        const res = await fetch(mirror, {
-          method: "POST",
-          body: query,
-          signal: AbortSignal.timeout(5000)
-        });
-        if (!res.ok) throw new Error("Fail");
-        const data = await res.json();
-        if (!data?.elements?.length) throw new Error("Empty");
-        return data;
-      }));
+      // Use backend proxy to avoid CORS issues on Vercel
+      const res = await fetch(`${API_URL}/api/hospitals/overpass-proxy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+      if (res.ok) {
+        json = await res.json();
+      } else {
+        throw new Error("Proxy failed");
+      }
     } catch {
-      console.warn("Turbo Search: All mirrors failed.");
+      console.warn("Turbo Search Proxy failed. Backend will log details.");
     }
 
     if (json?.elements?.length > 0) {

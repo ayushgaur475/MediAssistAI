@@ -72,6 +72,7 @@ export default function LabTests() {
   const { location: livePos, error: liveError } = useLiveLocation();
 
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "API_KEY";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const searchLabs = useCallback(async (cityOverride, latOverride, lonOverride) => {
     const targetCity = cityOverride || city;
@@ -130,19 +131,18 @@ export default function LabTests() {
 
       let labData = null;
       try {
-        labData = await Promise.any(mirrors.map(async (mirror) => {
-          const res = await fetch(mirror, {
-            method: "POST",
-            body: overpassQuery,
-            signal: AbortSignal.timeout(5000)
-          });
-          if (!res.ok) throw new Error("Fail");
-          const data = await res.json();
-          if (!data?.elements?.length) throw new Error("Empty");
-          return data;
-        }));
+        const res = await fetch(`${API_URL}/api/hospitals/overpass-proxy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: overpassQuery })
+        });
+        if (res.ok) {
+          labData = await res.json();
+        } else {
+          throw new Error("Proxy failed");
+        }
       } catch (err) {
-        console.warn("Turbo Search: All mirrors failed or timed out.");
+        console.warn("Turbo Search Proxy failed. Backend will log details.");
       }
 
       if (!labData || !labData.elements || labData.elements.length === 0) {
