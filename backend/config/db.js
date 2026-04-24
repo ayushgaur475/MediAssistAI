@@ -8,9 +8,9 @@ const connectDB = async () => {
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    console.warn("Please verify that MongoDB is running locally or check your MONGODB_URI.");
-    process.exit(1);
+    console.warn(`\x1b[33m%s\x1b[0m`, `⚠️  MongoDB Connection Error: ${error.message}`);
+    console.warn(`\x1b[36m%s\x1b[0m`, "💡 The server is still running. Note that database-dependent features will fail.");
+    // No longer exiting process - allowing other services (like AI) to function.
   }
 };
 

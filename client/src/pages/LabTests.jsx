@@ -73,30 +73,42 @@ export default function LabTests() {
 
   const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || "API_KEY";
 
-  const searchLabs = useCallback(async (cityOverride) => {
+  const searchLabs = useCallback(async (cityOverride, latOverride, lonOverride) => {
     const targetCity = cityOverride || city;
-    if (!targetCity.trim() || searchingRef.current) return;
+    const isGPS = latOverride !== undefined && lonOverride !== undefined;
+    
+    if (!isGPS && !targetCity.trim()) return;
+    if (searchingRef.current) return;
     
     searchingRef.current = true;
     setLoading(true);
     setLabs([]);
 
     try {
-      // 1. Get City Coordinates
-      const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(targetCity)}&countrycodes=in&limit=1`);
-      const geoData = await geoRes.json();
+      let lat, lon;
+      if (isGPS) {
+        lat = latOverride;
+        lon = lonOverride;
+        setCity("My Current Location");
+        setCityPos([lat, lon]);
+      } else {
+        // 1. Get City Coordinates
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(targetCity)}&countrycodes=in&limit=1`);
+        const geoData = await geoRes.json();
 
-      if (geoData.length === 0) {
-        if (!cityOverride) alert("City not found. Please try again.");
-        setLoading(false);
-        return;
+        if (geoData.length === 0) {
+          if (!cityOverride) alert("City not found. Please try again.");
+          setLoading(false);
+          searchingRef.current = false;
+          return;
+        }
+
+        lat = parseFloat(geoData[0].lat);
+        lon = parseFloat(geoData[0].lon);
+        setCityPos([lat, lon]);
       }
 
-      const { lat, lon } = geoData[0];
-      const newPos = [parseFloat(lat), parseFloat(lon)];
-      setCityPos(newPos);
-
-      // 2. Query Overpass for Pathology/Labs - Optimized Radius Search (10km)
+      // 2. Query Overpass for Pathology/Labs - Optimized 10km Radius
       const overpassQuery = `
         [out:json][timeout:25];
         (
@@ -112,72 +124,54 @@ export default function LabTests() {
       const mirrors = [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
-        "https://overpass.osm.ch/api/interpreter"
+        "https://overpass.osm.ch/api/interpreter",
+        "https://overpass.nchc.org.tw/api/interpreter"
       ];
 
       let labData = null;
-      
-      // --- Stage 1: Parallel Mirror Racing (Turbo Search) ---
-      console.log("Turbo Search: Racing Overpass Mirrors...");
       try {
         labData = await Promise.any(mirrors.map(async (mirror) => {
           const res = await fetch(mirror, {
             method: "POST",
             body: overpassQuery,
-            signal: AbortSignal.timeout(5000) // 5s timeout per mirror
+            signal: AbortSignal.timeout(5000)
           });
-          
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) throw new Error("Fail");
           const data = await res.json();
-          if (!data || !data.elements || data.elements.length === 0) throw new Error("Empty results");
-          
-          console.log(`Turbo Search: Mirror ${mirror} won!`);
+          if (!data?.elements?.length) throw new Error("Empty");
           return data;
         }));
       } catch (err) {
-        console.warn("All Overpass mirrors failed or timed out. Falling back...");
+        console.warn("Turbo Search: All mirrors failed or timed out.");
       }
 
-      // --- Stage 2: Nominatim Fallback (If Overpass Fails) ---
       if (!labData || !labData.elements || labData.elements.length === 0) {
-        console.log("Overpass failed or empty. Falling back to Nominatim Search...");
-        try {
-          const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=laboratory+in+${encodeURIComponent(targetCity)}&countrycodes=in&limit=20`;
-          const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'MediAsisstAI-App' } });
-          const nomData = await nomRes.json();
-          
-          if (nomData && nomData.length > 0) {
-            const formatted = nomData.map((item, idx) => ({
-              id: item.place_id || `nom_${idx}`,
-              lat: parseFloat(item.lat),
-              lon: parseFloat(item.lon),
-              name: item.display_name.split(',')[0],
-              address: item.display_name,
-              type: "Diagnostic Center (Search Result)"
-            }));
-            setLabs(formatted);
-            setLoading(false);
-            return; // Success via Nominatim
-          }
-        } catch (nomErr) {
-          console.error("Nominatim Fallback failed:", nomErr);
+        // Fallback to Nominatim simple search
+        const nomQuery = isGPS ? "laboratory" : `laboratory in ${targetCity}`;
+        const searchViewbox = isGPS ? `&viewbox=${lon-0.1},${lat+0.1},${lon+0.1},${lat-0.1}&bounded=1` : "";
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(nomQuery)}${searchViewbox}&countrycodes=in&limit=20`;
+        const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'MediAsisstAI-App' } });
+        const nomData = await nomRes.json();
+        
+        if (nomData && nomData.length > 0) {
+          const formatted = nomData.map((item, idx) => ({
+            id: item.place_id || `nom_${idx}`,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon),
+            name: item.display_name.split(',')[0],
+            address: item.display_name,
+            type: "Diagnostic Center"
+          }));
+          setLabs(formatted);
+          return;
         }
-
-        // --- Stage 3: Mock Data Generation (Fail-safe for Demo) ---
-        console.log("Generating Mock Lab Data as API fallback...");
-        const cLat = newPos[0];
-        const cLon = newPos[1];
         
+        // Mock fallback as last resort
         const mockLabs = [
-          { id: 'mock_1', lat: cLat + 0.015, lon: cLon + 0.01, name: "City Center Diagnostics", address: "Main Road, Central Hub, " + targetCity, type: "Pathology Lab" },
-          { id: 'mock_2', lat: cLat - 0.01, lon: cLon - 0.02, name: "Advanced Imaging & Labs", address: "Sector 4, West Valley, " + targetCity, type: "Imaging & Diagnostics" },
-          { id: 'mock_3', lat: cLat + 0.02, lon: cLon - 0.015, name: "LifeCare Pathology", address: "Health Park, North Avenue, " + targetCity, type: "Clinical Lab" },
-          { id: 'mock_4', lat: cLat - 0.025, lon: cLon + 0.012, name: "Prime Diagnostic Center", address: "Medical Enclave, East Wing, " + targetCity, type: "Pathology Lab" },
-          { id: 'mock_5', lat: cLat + 0.005, lon: cLon - 0.03, name: "QuickTest Laboratories", address: "Commercial Area, Block 2, " + targetCity, type: "Diagnostic Center" }
+          { id: 'mock_1', lat: lat + 0.005, lon: lon + 0.005, name: "City Pathological Lab", address: "Sector 1, " + (targetCity || "Current Location"), type: "Pathology" },
+          { id: 'mock_2', lat: lat - 0.005, lon: lon - 0.005, name: "Sunrise Diagnostics", address: "Lane 4, " + (targetCity || "Current Location"), type: "Diagnostic" }
         ];
-        
         setLabs(mockLabs);
-        setLoading(false);
         return;
       }
 
@@ -193,12 +187,28 @@ export default function LabTests() {
       setLabs(formatted);
     } catch (err) {
       console.error(err);
-      if (!cityOverride) alert(err.message || "Error finding labs. High traffic on OpenStreetMap servers.");
     } finally {
       setLoading(false);
       searchingRef.current = false;
     }
   }, [city]);
+
+  const handleUseMyLocation = () => {
+    if (searchingRef.current) return;
+    if (livePos) {
+      searchLabs(null, livePos[0], livePos[1]);
+    } else {
+      setLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => searchLabs(null, pos.coords.latitude, pos.coords.longitude),
+        (err) => {
+          setLoading(false);
+          alert("Location access denied.");
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+  };
 
   useEffect(() => {
     const cityParam = searchParams.get("city");
@@ -302,6 +312,13 @@ export default function LabTests() {
                     onChange={(e) => setCity(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && searchLabs()}
                  />
+                 <button 
+                    onClick={handleUseMyLocation}
+                    className="absolute right-3 p-2 bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-500 rounded-xl transition-all active:scale-95 group/loc"
+                    title="Use My Location"
+                  >
+                    <Navigation size={18} className="group-hover/loc:rotate-45 transition-transform" />
+                  </button>
                </div>
                <button 
                   onClick={() => searchLabs()} 

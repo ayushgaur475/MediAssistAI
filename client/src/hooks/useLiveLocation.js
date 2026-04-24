@@ -19,8 +19,8 @@ export function useLiveLocation() {
     
     const options = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
+      timeout: 15000,
+      maximumAge: 5000
     };
 
     const success = (pos) => {

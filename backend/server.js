@@ -8,7 +8,8 @@ import aiRoutes from "./routes/aiRoutes.js";
 
 const app = express();   // ✅ VERY IMPORTANT
 
-connectDB();
+
+
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -29,8 +30,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error" });
 });
 
+// ─── STARTUP ────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`\n\x1b[32m%s\x1b[0m`, `🚀 MEDI.ASSIST BACKEND IS ONLINE`);
+    console.log(`\x1b[36m%s\x1b[0m`, `📍 URL: http://localhost:${PORT}`);
+    console.log(`\x1b[90m%s\x1b[0m`, `--------------------------------------------------\n`);
+    
+    // Attempt Database Connection (Non-blocking)
+    connectDB().catch(err => {
+        // This is handled inside connectDB but added here for triple safety
+        console.error("Critical DB Startup error:", err.message);
+    });
 });
+
+// Explicit keep-alive for some environments
+server.keepAliveTimeout = 70000; 
+server.headersTimeout = 71000;

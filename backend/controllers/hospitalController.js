@@ -68,7 +68,25 @@ export const searchHospitals = async (req, res) => {
     let queryFilter = { District: cityRegex };
     
     if (speciality && speciality.trim() !== "") {
-      const specRegex = new RegExp(speciality.trim(), "i");
+      const specLower = speciality.trim().toLowerCase();
+      const specMapping = {
+        'eye': 'ophthalmology|eye|optometrist',
+        'heart': 'cardiology|heart',
+        'skin': 'dermatology|skin',
+        'kidney': 'nephrology|kidney',
+        'teeth': 'dentist|dental|teeth',
+        'tooth': 'dentist|dental|tooth',
+        'dentist': 'dentist|dental',
+        'child': 'pediatric|child',
+        'women': 'gynecology|women',
+        'brain': 'neurology|brain',
+        'bone': 'orthopedic|bone',
+        'stomach': 'gastroenterology|stomach',
+        'cancer': 'oncology|cancer',
+        'lung': 'pulmonology|lung'
+      };
+      const expandedSpec = specMapping[specLower] || specLower;
+      const specRegex = new RegExp(expandedSpec, "i");
       queryFilter.Discipline_Systems_of_Medicine = specRegex;
     }
 

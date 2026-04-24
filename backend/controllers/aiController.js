@@ -68,61 +68,107 @@ export const chatWithAiDoctor = async (req, res) => {
     }
 
     const replyContent = response.data.choices[0]?.message?.content || "";
+    console.log("--- RAW AI RESPONSE ---");
+    console.log(replyContent);
+    console.log("------------------------");
 
     let suggestion = null;
     let medicines = [];
     let wellnessPlan = null;
     let cleanReply = replyContent;
 
-    // 1. Wellness Plan Parsing
-    const planRegex = /###WELLNESS_PLAN###\s*({[\s\S]*})/i;
-    const planMatch = cleanReply.match(planRegex);
-    if (planMatch) {
-      try {
-        wellnessPlan = JSON.parse(planMatch[1]);
-        cleanReply = cleanReply.replace(planMatch[0], "").trim();
-      } catch (e) {}
-    }
-
-    // 2. Specialty & Tag Extraction (Greedy Fallbacks)
-    const specialtyMatch = cleanReply.match(/(?:SPECIALTY:\s*|\()([A-Za-z\s\/]+)(?:\)|(?:\s*MEDICINES:))/i);
-    if (specialtyMatch) {
-      suggestion = specialtyMatch[1].trim();
-      cleanReply = cleanReply.replace(specialtyMatch[0], "").trim();
-    }
-
-    // 3. Medicine Parsing (Greedy "Hunt" for [Name | Reason] patterns)
-    // Matches patterns like [Med | Reason], (Med | Reason), or even just med | reason
-    const medPattern = /\[?([A-Za-z\s\d\-]+)\s*\|\s*([^\]\)]+)\]?/g;
-    let match;
-    while ((match = medPattern.exec(replyContent)) !== null) {
-      let name = match[1].replace(/[*#\[\]\(\)]/g, "").replace(/^\d+[\.\)]\s*/, "").trim();
-      let desc = match[2].replace(/[*#\[\]\(\)]/g, "").trim();
-
-      // Final validation: Ensure it's not a generic instruction
-      if (name.length > 2 && name.toLowerCase() !== "medicine name") {
-        medicines.push({ name, description: desc });
-        // Remove the matched text from cleanReply so it doesn't show in the chat
-        cleanReply = cleanReply.replace(match[0], "").trim();
+    // 1. Wellness Plan Parsing (Robust JSON search)
+    const wellnessMarkers = ["###WELLNESS_PLAN###", "WELLNESS PLAN:", "Wellness Plan:"];
+    let planIndex = -1;
+    for (const marker of wellnessMarkers) {
+      const idx = cleanReply.indexOf(marker);
+      if (idx !== -1) {
+        planIndex = idx;
+        break;
       }
     }
 
-    // Comprehensive Post-Clean
+    if (planIndex !== -1) {
+      const remainingText = cleanReply.substring(planIndex);
+      const jsonMatch = remainingText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          wellnessPlan = JSON.parse(jsonMatch[0]);
+          // Clean the reply by removing everything from the marker onwards
+          cleanReply = cleanReply.substring(0, planIndex).trim();
+        } catch (e) {
+          console.error("Wellness Plan JSON Parse Error:", e.message);
+        }
+      }
+    }
+
+    // 2. Specialty Extraction (More flexible pattern)
+    const specialtyRegex = /(?:SPECIALTY|Specialty|Suggest):\s*([A-Za-z\s\/]+)(?:\n|$)/i;
+    const specMatch = cleanReply.match(specialtyRegex);
+    if (specMatch) {
+      suggestion = specMatch[1].trim();
+      cleanReply = cleanReply.replace(specMatch[0], "").trim();
+    }
+
+    // 3. Medicine Parsing (Greedy "Hunt")
+    // Match common formats: [Med | Reason], Med | Reason, Medicine: Name - Reason
+    const medPatterns = [
+      /\[?([A-Za-z\s\d\-]+)\s*\|\s*([^\]\n]+)\]?/g,
+      /(?:MEDICINES|Medicines):\s*(.+)/gi
+    ];
+
+    let foundMeds = [];
+    // Try structured format first [Name | Reason]
+    let match;
+    const structuredPattern = /\[?([A-Za-z\s\d\-]+)\s*\|\s*([^\]\n]+)\]?/g;
+    while ((match = structuredPattern.exec(replyContent)) !== null) {
+      let name = match[1].replace(/[*#\[\]\(\)]/g, "").replace(/^\d+[\.\)]\s*/, "").trim();
+      let desc = match[2].replace(/[*#\[\]\(\)]/g, "").trim();
+
+      if (name.length > 2 && name.toLowerCase() !== "medicine name" && name.toLowerCase() !== "specialty") {
+        foundMeds.push({ name, description: desc });
+      }
+    }
+
+    // If no medicines found via structured pattern, look for comma separated list or other markers
+    if (foundMeds.length === 0) {
+      const listMatch = replyContent.match(/(?:MEDICINES|Medicines):\s*([\s\S]+?)(?:\n\n|\n###|$)/i);
+      if (listMatch) {
+        const lines = listMatch[1].split(/[,\n]/);
+        lines.forEach(line => {
+          const parts = line.split(/[|\-:]/);
+          if (parts[0]) {
+            let name = parts[0].replace(/[*#\[\]\(\)]/g, "").replace(/^\d+[\.\)]\s*/, "").trim();
+            let desc = parts[1] ? parts[1].trim() : "Follow package instructions.";
+            if (name.length > 2 && name.length < 30) {
+              foundMeds.push({ name, description: desc });
+            }
+          }
+        });
+      }
+    }
+    medicines = foundMeds;
+
+    // 4. Final Cleanup of the conversational reply
     cleanReply = cleanReply
       .replace(/SPECIALTY:.*$/gim, "")
       .replace(/MEDICINES:.*$/gim, "")
       .replace(/\[\s*\|\s*.*\]/g, "")
-      .replace(/\s*\(.*\)\s*/g, (match) => (match.includes("Plan") || match.includes("|") ? "" : match))
+      .replace(/###WELLNESS_PLAN###/g, "")
+      .replace(/\r/g, "")
       .trim();
 
-    cleanReply = cleanReply.split("SPECIALTY:")[0].split("MEDICINES:")[0].split("###")[0].trim();
+    // Ensure we don't return an empty reply if the AI put everything in tags
+    if (!cleanReply || cleanReply.length < 5) {
+      cleanReply = "I have reviewed your symptoms and prepared some recommendations below.";
+    }
 
     return res.status(200).json({ 
       reply: cleanReply,
       suggestion, 
       medicines, 
       wellnessPlan,
-      disclaimer: "AI for informational use only."
+      disclaimer: "AI guidance is for informational purposes. Please consult a physical doctor if symptoms persist."
     });
 
   } catch (error) {

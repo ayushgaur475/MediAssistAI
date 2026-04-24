@@ -16,6 +16,8 @@ function MapController({ places, selectedId, userPos, routingTo, routeData, live
     return lat >= 6 && lat <= 38 && lon >= 68 && lon <= 98;
   };
 
+  const lastRedirectRef = useRef(null);
+
   useEffect(() => {
     // Priority 1: Navigation Routing (Fit to Path)
     if (routeData && routeData.length > 0) {
@@ -24,7 +26,14 @@ function MapController({ places, selectedId, userPos, routingTo, routeData, live
       return;
     }
 
-    // Priority 2: Selected Hospital
+    // Priority 2: One-off Redirect for "Use My Location"
+    if (userPos && userPos !== lastRedirectRef.current) {
+      map.flyTo(userPos, 16, { animate: true, duration: 1.5 });
+      lastRedirectRef.current = userPos;
+      return;
+    }
+
+    // Priority 3: Selected Hospital
     if (selectedId && places.length > 0) {
       const selectedPlace = places.find(p => (p.place_id || p.id) === selectedId);
       if (selectedPlace && selectedPlace.lat !== 0 && selectedPlace.lon !== 0 && isInsideIndia(selectedPlace.lat, selectedPlace.lon)) {
@@ -33,13 +42,13 @@ function MapController({ places, selectedId, userPos, routingTo, routeData, live
       return;
     }
 
-    // Priority 3: Live User Position (Follow Mode)
+    // Priority 4: Live User Position (Follow Mode)
     if (followUser && livePos) {
       map.flyTo(livePos, map.getZoom() < 15 ? 15 : map.getZoom(), { animate: true, duration: 1 });
       return;
     }
 
-    // Priority 4: All Search Results
+    // Priority 5: All Search Results
     const validPlaces = places.filter(p => p.lat !== 0 && p.lon !== 0 && isInsideIndia(p.lat, p.lon));
     if (validPlaces.length > 0) {
       const bounds = L.latLngBounds(validPlaces.map(p => [p.lat, p.lon]));
@@ -63,13 +72,6 @@ function MapController({ places, selectedId, userPos, routingTo, routeData, live
 function MapButtons({ handleLocate, setRoutingTo, userPos, followUser, setFollowUser }) {
   const map = useMap();
   
-  useEffect(() => {
-    if (userPos && !window.hasInitiallyLocated) {
-      map.flyTo(userPos, 15, { animate: true });
-      window.hasInitiallyLocated = true;
-    }
-  }, [userPos, map]);
-
   return (
     <div className="absolute top-4 right-4 flex flex-col gap-2 z-[1000]">
       {/* Action Pillar */}
@@ -365,8 +367,8 @@ export default function MapPage() {
     setIsSearchedCity(false);
     window.hasInitiallyLocated = false;
 
-    const RADIUS_M = 20000;
-    const RADIUS_DEG = 0.2;
+    const RADIUS_M = 10000;
+    const RADIUS_DEG = 0.1;
 
     const distKm = (lat1, lon1, lat2, lon2) => {
       const R = 6371;
@@ -378,20 +380,44 @@ export default function MapPage() {
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
+    const getSpecialityMapping = (s) => {
+      const mapping = {
+        'eye': 'ophthalmology|eye|optometrist',
+        'heart': 'cardiology|heart',
+        'skin': 'dermatology|skin',
+        'kidney': 'nephrology|kidney',
+        'teeth': 'dentist|dental|teeth',
+        'tooth': 'dentist|dental|tooth',
+        'dentist': 'dentist|dental',
+        'child': 'pediatric|child',
+        'women': 'gynecology|women',
+        'brain': 'neurology|brain',
+        'bone': 'orthopedic|bone',
+        'stomach': 'gastroenterology|stomach',
+        'cancer': 'oncology|cancer',
+        'lung': 'pulmonology|lung'
+      };
+      return mapping[s.toLowerCase()] || s;
+    };
+
     let amenityFilter = "";
     const specLower = spec.toLowerCase().trim();
-    if (specLower === "dentist" || specLower.includes("dental")) {
-      amenityFilter = `node["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});way["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});`;
+    const expandedSpec = getSpecialityMapping(specLower);
+
+    if (specLower === "dentist" || specLower.includes("dental") || specLower.includes("teeth")) {
+      amenityFilter = `node["amenity"~"dentist|doctors"]["healthcare:speciality"~"dental|dentist",i](around:${RADIUS_M},${lat},${lon});way["amenity"~"dentist|doctors"]["healthcare:speciality"~"dental|dentist",i](around:${RADIUS_M},${lat},${lon});node["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});way["amenity"="dentist"](around:${RADIUS_M},${lat},${lon});`;
     } else if (specLower.includes("pharmacy")) {
       amenityFilter = `node["amenity"="pharmacy"](around:${RADIUS_M},${lat},${lon});way["amenity"="pharmacy"](around:${RADIUS_M},${lat},${lon});`;
     } else if (specLower.includes("clinic") || specLower.includes("doctor")) {
       amenityFilter = `node["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});way["amenity"~"clinic|doctors"](around:${RADIUS_M},${lat},${lon});`;
     } else if (spec) {
       amenityFilter = `
-        node["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
-        way["amenity"~"hospital|clinic|doctors"]["name"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
-        node["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
-        way["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${spec}",i](around:${RADIUS_M},${lat},${lon});
+        node["amenity"~"hospital|clinic|doctors"]["name"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
+        way["amenity"~"hospital|clinic|doctors"]["name"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
+        node["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
+        way["amenity"~"hospital|clinic|doctors"]["healthcare:speciality"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
+        node["amenity"~"hospital|clinic|doctors"]["description"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
+        way["amenity"~"hospital|clinic|doctors"]["description"~"${expandedSpec}",i](around:${RADIUS_M},${lat},${lon});
       `;
     } else {
       amenityFilter = `node["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});way["amenity"="hospital"](around:${RADIUS_M},${lat},${lon});`;
@@ -401,7 +427,9 @@ export default function MapPage() {
     const mirrors = [
       "https://overpass-api.de/api/interpreter",
       "https://overpass.kumi.systems/api/interpreter",
-      "https://overpass.osm.ch/api/interpreter"
+      "https://overpass.osm.ch/api/interpreter",
+      "https://overpass.nchc.org.tw/api/interpreter",
+      "https://lz4.overpass-api.de/api/interpreter"
     ];
 
     let json = null;
@@ -433,17 +461,17 @@ export default function MapPage() {
           source: 'osm'
         }))
         .filter(h => h.lat && h.lon)
-        .filter(h => distKm(lat, lon, h.lat, h.lon) <= 25)
+        .filter(h => distKm(lat, lon, h.lat, h.lon) <= 10)
         .sort((a, b) => distKm(lat, lon, a.lat, a.lon) - distKm(lat, lon, b.lat, b.lon));
 
       setPlaces(mapped);
-      setFallbackMessage(`📍 ${mapped.length} hospitals found within 20km of your location`);
+      setFallbackMessage(`📍 ${mapped.length} hospitals found within 10km of your location`);
     } else {
       try {
         const minLat = lat - RADIUS_DEG, maxLat = lat + RADIUS_DEG;
         const minLon = lon - RADIUS_DEG, maxLon = lon + RADIUS_DEG;
         // viewbox format: left,top,right,bottom  bounded=1 strictly restricts to this box
-        const nomQuery = spec ? `${spec} hospital` : 'hospital';
+        const nomQuery = spec ? spec : 'hospital';
         const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(nomQuery)}&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1&countrycodes=in&limit=20`;
         const nomRes = await fetch(nomUrl, { headers: { 'User-Agent': 'MediAsisstAI-App' } });
         const nomData = await nomRes.json();
@@ -459,14 +487,14 @@ export default function MapPage() {
               source: 'osm'
             }))
             // Hard distance filter even on Nominatim results
-            .filter(h => distKm(lat, lon, h.lat, h.lon) <= 25)
+            .filter(h => distKm(lat, lon, h.lat, h.lon) <= 10)
             .sort((a, b) => distKm(lat, lon, a.lat, a.lon) - distKm(lat, lon, b.lat, b.lon));
 
           if (mapped.length > 0) {
             setPlaces(mapped);
             setFallbackMessage(`📍 ${mapped.length} hospitals found near your location`);
           } else {
-            setFallbackMessage("No hospitals found within 25km of your location. Try searching by city name.");
+            setFallbackMessage("No hospitals found within 10km of your location. Try searching by city name.");
           }
         } else {
           setFallbackMessage("No hospitals found near your location. Try searching by city name.");
@@ -476,6 +504,7 @@ export default function MapPage() {
       }
     }
     setLoading(false);
+    searchingRef.current = false;
   };
 
   // Manually typing a city clears GPS mode
@@ -591,10 +620,15 @@ export default function MapPage() {
               speciality={speciality}
               setSpeciality={setSpeciality}
               handleSearch={handleSearch}
+              onLocationStart={() => {
+                setFallbackMessage("");
+                setPlaces([]);
+                setLoading(true); 
+              }}
               onLocationDetected={(detectedCity, lat, lon) => {
                 setCity(detectedCity);
                 if (lat && lon) {
-                  setGpsCoords([lat, lon]); // save so Apply Search reuses them
+                  setGpsCoords([lat, lon]); 
                   fetchNearbyByCoords(lat, lon, speciality);
                 } else {
                   handleSearch(detectedCity);
@@ -604,6 +638,7 @@ export default function MapPage() {
               onCityChange={handleCityChange}
               specSuggestions={specSuggestions}
               onSpecChange={handleSpecChange}
+              livePos={livePos}
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search, Loader2, Navigation, X } from "lucide-react";
 
@@ -8,63 +8,85 @@ export default function SearchBar({
   speciality,
   setSpeciality,
   handleSearch,
-  onLocationDetected, // called with (detectedCity, lat, lon) — lat/lon are the exact GPS coords
-  // Optional autocomplete
+  onLocationDetected, 
+  onLocationStart,
   citySuggestions = [],
   onCityChange,
   specSuggestions = [],
   onSpecChange,
+  livePos, // Existing background position
 }) {
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState("");
   const [cityFocused, setCityFocused] = useState(false);
   const [specFocused, setSpecFocused] = useState(false);
+  const isLocatingRef = useRef(false);
+
+  const fetchCityAndDetect = async (latitude, longitude, isFallback = false) => {
+    let detected = "Current Location";
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+        { 
+          headers: { "User-Agent": "MediAsisstAI-App" },
+          signal: AbortSignal.timeout(4000)
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        detected = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "Current Location";
+      }
+    } catch {
+      console.warn("City lookup failed, using placeholder.");
+    }
+
+    setCity(detected);
+    if (onCityChange) onCityChange(detected);
+    if (onLocationDetected) onLocationDetected(detected, latitude, longitude);
+    else handleSearch();
+    
+    isLocatingRef.current = false;
+    setLocating(false);
+    setLocError("");
+  };
 
   const handleUseMyLocation = () => {
+    if (isLocatingRef.current) return;
     if (!navigator.geolocation) {
-      setLocError("Geolocation not supported by your browser.");
+      setLocError("Geolocation not supported.");
       return;
     }
 
+    if (onLocationStart) onLocationStart();
+    isLocatingRef.current = true;
     setLocating(true);
     setLocError("");
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-            { headers: { "User-Agent": "MediAsisstAI-App" } }
-          );
-          const data = await res.json();
-          const detected =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.county ||
-            "Nearby";
-          setCity(detected);
-          if (onCityChange) onCityChange(detected);
-          // Pass city name AND exact GPS coordinates to parent
-          if (onLocationDetected) onLocationDetected(detected, latitude, longitude);
-          else handleSearch();
-        } catch {
-          setLocError("Unable to detect location.");
-        } finally {
-          setLocating(false);
-        }
-      },
-      (err) => {
-        setLocating(false);
-        if (err.code === 1) {
-          setLocError("Location access denied.");
-        } else {
-          setLocError("Unable to detect location.");
-        }
-      },
-      { timeout: 10000 }
-    );
+    // OPTIMIZATION: If we already have a live position, use it instantly!
+    if (livePos && livePos[0] && livePos[1]) {
+      console.log("Using instant livePos:", livePos);
+      fetchCityAndDetect(livePos[0], livePos[1]);
+      return;
+    }
+
+    const getLocationAttempt = (options, isFallback = false) => {
+      console.log(`Location Attempt: ${isFallback ? 'Fallback' : 'Primary'}`);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchCityAndDetect(pos.coords.latitude, pos.coords.longitude, isFallback),
+        (err) => {
+          if (!isFallback && (err.code === 3 || err.code === 2)) {
+            getLocationAttempt({ timeout: 10000, enableHighAccuracy: false, maximumAge: 60000 }, true);
+          } else {
+            isLocatingRef.current = false;
+            setLocating(false);
+            setLocError(err.code === 1 ? "Location access denied." : "Location timed out. Please try again.");
+          }
+        },
+        options
+      );
+    };
+
+    getLocationAttempt({ timeout: 8000, enableHighAccuracy: true, maximumAge: 0 });
   };
 
   const handleCityInput = (v) => {
