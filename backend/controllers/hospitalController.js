@@ -174,6 +174,11 @@ export const searchHospitals = async (req, res) => {
         message: "External search service is temporarily busy. Please try again in a moment."
       });
     }
+  } catch (error) {
+    console.error("Search API Error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 /**
