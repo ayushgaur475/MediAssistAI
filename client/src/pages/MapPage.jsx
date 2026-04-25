@@ -610,9 +610,14 @@ export default function MapPage() {
       {/* ─── TOP SEARCH BAR ─── */}
       <div className="shrink-0 z-20 px-4 py-3 bg-[var(--bg-card)] border-b border-[var(--border-subtle)] backdrop-blur-sm">
         <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <h2 className="text-base font-black uppercase tracking-tighter whitespace-nowrap hidden md:block">
-            <span className="text-neon">Medi.</span>Map
-          </h2>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/5 rounded-xl p-1.5 border border-white/10 hidden md:flex items-center justify-center">
+              <img src="/app_logo.png" alt="Logo" className="w-full h-full object-contain" />
+            </div>
+            <h2 className="text-base font-black uppercase tracking-tighter whitespace-nowrap hidden md:block">
+              <span className="text-neon">Medi.</span>Map
+            </h2>
+          </div>
           <div className="flex-1">
             <SearchBar
               city={city}

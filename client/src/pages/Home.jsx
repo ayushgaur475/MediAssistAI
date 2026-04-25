@@ -36,6 +36,16 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
+            <div className="flex justify-center mb-6">
+              <motion.div 
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.8, ease: "anticipate" }}
+                className="w-24 h-24 md:w-32 md:h-32 bg-white/5 backdrop-blur-2xl rounded-3xl p-4 border border-white/10 shadow-2xl flex items-center justify-center relative group"
+              >
+                <div className="absolute inset-0 bg-cyan-500/20 blur-3xl rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
+                <img src="/app_logo.png" alt="MediAssist Logo" className="w-full h-full object-contain relative z-10" />
+              </motion.div>
+            </div>
             <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tighter">
               <span className="text-[var(--text-main)]">Medi.</span>
               <span className="text-neon">Assist</span>
