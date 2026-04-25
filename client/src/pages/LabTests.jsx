@@ -283,8 +283,8 @@ export default function LabTests() {
         <div className="w-full mx-auto flex flex-col md:flex-row items-center gap-4 md:gap-8 px-2 md:px-6">
           <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-white/5 backdrop-blur-xl rounded-xl md:rounded-2xl flex items-center justify-center p-2 border border-white/10 shadow-lg animate-floating">
-                <img src="/app_logo.png" alt="Logo" className="w-full h-full object-contain" />
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-cyan-400 to-purple-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/30 animate-floating">
+                <FlaskConical size={22} className="md:size-28" />
               </div>
               <div>
                 <h2 className="text-xl md:text-2xl font-black tracking-tighter flex items-center gap-1">

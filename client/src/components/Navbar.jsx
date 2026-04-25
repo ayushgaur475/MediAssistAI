@@ -54,10 +54,10 @@ export default function Navbar() {
           {/* LOGO */}
           <Link to="/" className="flex items-center gap-2 group">
             <motion.div 
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl bg-white/5 p-1 border border-white/10"
+              whileHover={{ rotate: 180 }}
+              className="w-8 h-8 bg-gradient-to-tr from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center font-black text-white text-xs"
             >
-              <img src="/app_logo.png" alt="Logo" className="w-full h-full object-contain shadow-2xl" />
+              M+
             </motion.div>
             <span className="text-xl font-black tracking-tighter">
               <span className="dark:text-white text-gray-900">Medi.</span>
