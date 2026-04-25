@@ -11,7 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'MediAssist AI',
-        short_name: 'MediAssist',
+        short_name: 'MediAssistAI',
         description: 'Your Smart Healthcare Navigator',
         theme_color: '#0f172a',
         background_color: '#0f172a',
