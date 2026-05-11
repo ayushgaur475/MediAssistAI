@@ -5,10 +5,7 @@ import MapPage from "./pages/MapPage";
 import LabTests from "./pages/LabTests";
 import Appointment from "./pages/Appointment";
 import AiDoctor from "./pages/AiDoctor";
-import ZenZone from "./pages/ZenZone";
-import CaretakerLounge from "./pages/CaretakerLounge";
-
-
+import Emergency from "./pages/Emergency";
 
 export default function App() {
   return (
@@ -21,10 +18,7 @@ export default function App() {
           <Route path="/labs" element={<LabTests />} />
           <Route path="/appointment/:id" element={<Appointment />} />
           <Route path="/ai-doctor" element={<AiDoctor />} />
-          <Route path="/zen-zone" element={<ZenZone />} />
-          <Route path="/companion-lounge" element={<CaretakerLounge />} />
-
-
+          <Route path="/emergency" element={<Emergency />} />
         </Routes>
       </div>
     </div>

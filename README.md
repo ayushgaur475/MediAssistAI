@@ -5,7 +5,7 @@ A comprehensive healthcare platform that helps users find doctors, schedule appo
 ## Features
 
 - **🤖 AI Doctor**: AI-powered medical consultation and health recommendations
-- **🧘 ZenZone**: Wellness and mindfulness features for mental health support
+- **🚨 Emergency Services**: Quick access to critical care and emergency medical resources
 - **📋 Doctor Directory**: Browse detailed doctor profiles and credentials
 - **📅 Appointment Booking**: Schedule appointments with available doctors
 - **🗺️ Hospital Locator**: Find nearby hospitals and healthcare facilities on an interactive map
@@ -66,7 +66,6 @@ MediasisstAI/
 │   │   └── pages/
 │   │       ├── Home.jsx
 │   │       ├── AiDoctor.jsx      # AI consultation page
-│   │       ├── ZenZone.jsx       # Wellness page
 │   │       ├── MapPage.jsx
 │   │       ├── Appointment.jsx
 │   │       └── LabTests.jsx
@@ -182,7 +181,6 @@ npm run preview
 |------|-------|-------------|
 | Home | `/` | Landing page with featured doctors |
 | AI Doctor | `/ai-doctor` | AI-powered medical consultation |
-| ZenZone | `/zen-zone` | Wellness and mindfulness features |
 | Map | `/map` | Interactive map showing hospitals |
 | Appointment | `/appointment/:id` | Book appointment with doctor |
 | Lab Tests | `/lab-tests` | View available lab tests |
@@ -195,11 +193,10 @@ npm run preview
 - Personalized health recommendations
 - 24/7 availability
 
-### 🧘 ZenZone Wellness
-- Guided meditation and mindfulness exercises
-- Mental health resources and support
-- Wellness tips and lifestyle recommendations
-- Stress management tools
+### 🚨 Emergency Services
+- Quick access to critical care resources
+- Instant links to emergency medical support
+- Nearby hospital guidance for urgent needs
 
 ### 📍 Map Integration
 - Interactive map with Leaflet
@@ -264,7 +261,7 @@ lsof -ti:5173 | xargs kill -9
 ## Roadmap
 
 - [x] AI-powered doctor consultation
-- [x] Wellness and mindfulness features (ZenZone)
+- [x] Emergency medical resources access
 - [x] User-friendly appointment booking
 - [x] Interactive hospital map
 - [ ] User authentication and profiles

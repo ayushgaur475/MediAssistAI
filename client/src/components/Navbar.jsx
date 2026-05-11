@@ -86,7 +86,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2 sm:gap-4">
             {/* EMERGENCY SOS */}
             <Link 
-              to="/map?mode=emergency"
+              to="/emergency"
               className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border border-red-500/20 transition-all group relative overflow-hidden"
             >
               <span className="absolute inset-0 bg-red-500/5 animate-pulse" />
